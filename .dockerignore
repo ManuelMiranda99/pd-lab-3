@@ -1,0 +1,40 @@
+# Contexto de construcción de la imagen de la API: solo lo necesario para instalar y correr
+# el paquete (pyproject.toml, uv.lock, README.md, src/). Datos y credenciales NUNCA entran.
+
+# --- Datos publicados y credenciales ---
+datos/
+**/*.parquet
+.env
+.env.*
+!.env.example
+**/*.pdf
+
+# --- MLflow local y resultados ---
+mlruns/
+mlartifacts/
+**/mlflow.db
+eval/
+evidencia/
+ejemplos/
+
+# --- Repositorio, herramientas y documentación de trabajo ---
+.git/
+.github/
+.claude/
+.venv/
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+tests/
+scripts/
+*.md
+!README.md
+.DS_Store
+.Rhistory
+.idea/
+.vscode/
+Dockerfile
+docker-compose.yml
+.dockerignore

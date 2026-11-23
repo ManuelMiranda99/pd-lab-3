@@ -1,0 +1,91 @@
+# NovaPedidos: API (puerto 8000) + MLflow (puerto 5000).
+#
+#   cp .env.example .env      # y pega tu OPENROUTER_API_KEY
+#   # coloca los 5 parquet publicados en ./datos/
+#   docker compose up --build
+#
+# Puertos publicados en el host configurables: API_PUERTO (8000) y MLFLOW_PUERTO (5000).
+# Si MLflow no está disponible, la API sigue respondiendo y GET /health = "degradado".
+# Decisiones: DECISIONES.md D45–D48.
+
+name: novapedidos
+
+services:
+  api:
+    build: .
+    image: novapedidos-api:local
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Dentro del contenedor estos valores mandan sobre los de .env.
+      DATOS_DIR: /app/datos
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      # Tolerancia a MLflow caído o colgado (D43). MLflow las lee solo del entorno real.
+      MLFLOW_ENABLE_ASYNC_TRACE_LOGGING: "true"
+      MLFLOW_ASYNC_TRACE_LOGGING_MAX_QUEUE_SIZE: ${MLFLOW_ASYNC_TRACE_LOGGING_MAX_QUEUE_SIZE:-200}
+      MLFLOW_ASYNC_TRACE_LOGGING_MAX_WORKERS: ${MLFLOW_ASYNC_TRACE_LOGGING_MAX_WORKERS:-4}
+      MLFLOW_HTTP_REQUEST_TIMEOUT: ${MLFLOW_HTTP_REQUEST_TIMEOUT:-3}
+      MLFLOW_HTTP_REQUEST_MAX_RETRIES: ${MLFLOW_HTTP_REQUEST_MAX_RETRIES:-1}
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+    volumes:
+      # Datos publicados: fuera de la imagen y de solo lectura.
+      - ${DATOS_HOST_DIR:-./datos}:/app/datos:ro
+    ports:
+      - "${API_PUERTO:-8000}:8000"
+    # Sin `condition: service_healthy`: la API arranca sin MLflow y se conecta sola (D43).
+    depends_on:
+      - mlflow
+    healthcheck:
+      # /health responde 200 también cuando está "degradado".
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status == 200 else 1)"
+      interval: 15s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    restart: unless-stopped
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.18.0
+    command:
+      - mlflow
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --workers
+      - "2"
+      - --backend-store-uri
+      - sqlite:////mlflow/mlflow.db
+      - --artifacts-destination
+      - /mlflow/artefactos
+      - --serve-artifacts
+      # MLflow 3.18 rechaza Host que no sean localhost/IP privada: se agrega el nombre del
+      # servicio (lo usa la API dentro de la red) y localhost con cualquier puerto (navegador).
+      - --allowed-hosts
+      - ${MLFLOW_ALLOWED_HOSTS:-mlflow,mlflow:5000,localhost,localhost:*,127.0.0.1,127.0.0.1:*}
+    environment:
+      MLFLOW_DISABLE_AGENT_HINT: "1"
+    volumes:
+      - mlflow-datos:/mlflow
+    ports:
+      - "${MLFLOW_PUERTO:-5000}:5000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:5000/health', timeout=4).status == 200 else 1)"
+      interval: 15s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  mlflow-datos:

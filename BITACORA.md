@@ -320,3 +320,36 @@
 
 ### Próxima sesión
 - Fase 9: MLflow 3.18 requiere `--allowed-hosts` con `mlflow:5000`; la API no debe depender de `service_healthy` de mlflow.
+
+---
+
+## Sesión 2026-11-23 — Fase 9 (inicio)
+**Fase:** 9 — Docker Compose
+**Estado al cerrar:** Fase 9 cerrada ✅ (subagente; verificada por la sesión principal)
+
+### Logrado
+- F9.1 `Dockerfile` (python 3.11 slim + uv, no root, sin datos ni `.env`), `.dockerignore`; MLflow `ghcr.io/mlflow/mlflow:v3.18.0` con `--allowed-hosts`.
+- F9.2 `docker-compose.yml`: `api` (8000) y `mlflow` (5000) con puertos configurables (`API_PUERTO`, `MLFLOW_PUERTO`), datos montados `:ro`, healthchecks, sin `service_healthy`.
+- F9.3 `scripts/probar_resiliencia_docker.py`: stop/start y pause/unpause de MLflow.
+- F9.4 Clon limpio → `up --build` → evaluación por HTTP.
+
+### Verificación
+- pytest 461 · ruff ok.
+- Sesión principal: `up` → `/health` ok en 6 s, ambos healthy; Anexo → 840.0, 2026-11-26, aceite ambiguo.
+- Resiliencia: 100 % de POST con 200; `/health` degradado en 0.1 s (stop) / 1 s (pause), ok en ~4 s / ~1 s al volver; trazas nuevas sin reiniciar.
+- Clon limpio por HTTP: 138/139 (dev 83/84, propios 55/55), p95 2.17 s. Imagen sin datos ni `.env`.
+
+### Lo que falló
+- Sin `--allowed-hosts` MLflow 3.18 da 403 a la API (pero `/health` 200) · resuelto (D46).
+- zsh + variable de comando; ruff SIM105 · resueltos.
+- Verificación propia: primer chequeo leyó `"datos":"ok"` como ok · repetido correctamente.
+- D073 falló una vez en la evaluación Docker (variación del modelo).
+
+### Capturas
+- evidencia/sesiones/2026-11-23_F9/01_docs.png, 02_health_ok.png, 03_health_degradado.png, 04_mlflow_trazas.png, 05_mlflow_trazas_clon.png, compose_ps*.txt, resiliencia_docker.txt, eval_docker.txt.
+
+### Decisiones tomadas
+- D45–D48 (imagen y uv, MLflow allowed-hosts y volumen, dependencia api→mlflow, puertos configurables).
+
+### Próxima sesión
+- Fase 10: comparar modelos; Fase 11: README completo y clon desde GitHub.

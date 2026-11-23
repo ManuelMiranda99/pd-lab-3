@@ -55,6 +55,10 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D42 | Trazas de MLflow por solicitud | Tramo raíz `interpretar_pedido` + `interprete_llm` (autolog de LangChain) + `resolucion_productos` + `motor_armar_pedido`; etiquetas de modelo, tokens, costo, latencias, estado HTTP; experimento `novapedidos-api` |
 | D43 | Tolerancia a fallos de MLflow | Ninguna llamada de red en el hilo de la solicitud: conexión en hilo de fondo con reintentos, destino por id, exportación asíncrona acotada (timeout 3 s, 1 reintento, cola 200); `/health` con caché de 1 s |
 | D44 | Evaluación en MLflow | `eval/correr.py --mlflow`: un run por corrida (parámetros, ~60 métricas, artefactos, tablas) + `mlflow.genai.evaluate` con los calificadores como scorers sobre salidas ya calculadas (costo cero) |
+| D45 | Imagen de la API | `python:3.11-slim` + uv 0.13.7 (`uv sync --frozen --no-dev` en dos capas), usuario no root, sin datos ni `.env` (`.dockerignore`) |
+| D46 | MLflow en Compose | `ghcr.io/mlflow/mlflow:v3.18.0`, sqlite + artefactos servidos en el volumen `mlflow-datos`, `--allowed-hosts` con `mlflow:5000` y localhost |
+| D47 | Compose: dependencias, variables y salud | `depends_on` simple (sin `service_healthy`), variables de D43 en `environment`, datos `:ro`, healthchecks, `restart: unless-stopped` |
+| D48 | Puertos configurables | `API_PUERTO` (8000) y `MLFLOW_PUERTO` (5000) |
 
 ---
 
@@ -1081,6 +1085,106 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
   proveedor, D41). Run `20261123_f8_nano_completa` (`evidencia/mlflow/`,
   `evidencia/sesiones/2026-11-23_F8/eval/`). Pruebas `tests/test_evaluacion_mlflow.py` (sqlite
   temporal: métricas, parámetros, artefactos, tablas y evaluación con los 11 scorers).
+
+## D45 · Imagen de la API: base, uv y contenido
+
+- **Contexto.** El PDF: la API y MLflow se levantan con `docker compose up`; datos y
+  credenciales no forman parte de las imágenes. Las dependencias ya están fijadas en `uv.lock`.
+- **Decisión.** `Dockerfile` sobre **`python:3.11-slim`** (la misma versión menor que
+  `.python-version` y `requires-python`) con el binario de **uv 0.13.7** copiado de
+  `ghcr.io/astral-sh/uv:0.13.7` (versión fija, la de desarrollo). Dos capas de instalación:
+  `uv sync --frozen --no-dev --no-install-project` con solo `pyproject.toml` + `uv.lock`
+  (cacheable mientras no cambien las dependencias) y luego `uv sync --frozen --no-dev
+  --no-editable` con `src/` y `README.md`; caché de uv con `--mount=type=cache`,
+  `UV_COMPILE_BYTECODE=1`. Usuario sin privilegios `novapedidos` (uid 10001), `EXPOSE 8000`,
+  `HEALTHCHECK` con `python -c urllib` (la imagen slim no trae curl) y `CMD uvicorn
+  novapedidos.api.main:app --host 0.0.0.0 --port 8000`. `DATOS_DIR=/app/datos` es solo el
+  punto de montaje (vacío en la imagen). `.dockerignore` de lista negra amplia: `datos/`,
+  `*.parquet`, `.env*` (salvo `.env.example`), `*.pdf`, `.git`, `.venv`, `mlruns`, `eval/`,
+  `evidencia/`, `ejemplos/`, `tests/`, `scripts/` y los `.md` salvo `README.md` (lo exige
+  `pyproject.toml`).
+- **Alternativas.** `pip install` desde un `requirements.txt` exportado (otro archivo que
+  mantener y sin la garantía de `--frozen`); imagen multi-etapa con un *runtime* sin uv (ahorra
+  ~40 MB de 1.12 GB; no compensa la complejidad); `python:3.11-alpine` (sin ruedas musl para
+  pyarrow/pandas: compilaciones largas); `uv run` como `CMD` (resincroniza al arrancar).
+- **Justificación / evidencia.** Construcción en frío 48.8 s; reconstrucción `--no-cache`
+  (con la caché de uv) 30.4 s; tamaño 1.12 GB (lo domina `mlflow` completo: matplotlib,
+  sqlalchemy, etc.). `find /` dentro de la imagen: ningún `.parquet` salvo los de prueba de
+  `pyarrow`, ningún `.env`, `mlflow.db` ni `mensajes_dev.jsonl`; `/app/datos` vacío; ninguna
+  variable `OPENROUTER_*` en la imagen; `id` = `novapedidos`.
+
+## D46 · Imagen y configuración de MLflow en Compose
+
+- **Contexto.** La API necesita un servidor de MLflow 3.18 (la versión de `uv.lock`) para las
+  trazas (D42) y la evaluación (D44). MLflow 3.18 trae un *middleware* de seguridad que solo
+  acepta encabezados `Host` de localhost o de IP privadas.
+- **Decisión.** Imagen oficial **`ghcr.io/mlflow/mlflow:v3.18.0`** (amd64 y arm64; misma
+  versión que el cliente) con `mlflow server --host 0.0.0.0 --port 5000 --workers 2
+  --backend-store-uri sqlite:////mlflow/mlflow.db --artifacts-destination /mlflow/artefactos
+  --serve-artifacts`: metadatos y artefactos en el **volumen nombrado `mlflow-datos`** (persisten
+  entre `down`/`up`; `down -v` los borra) y los artefactos viajan por HTTP (`mlflow-artifacts:`),
+  así la evaluación desde el host (`eval/correr.py --mlflow`) sube sus archivos sin compartir
+  disco con el contenedor. **`--allowed-hosts
+  mlflow,mlflow:5000,localhost,localhost:*,127.0.0.1,127.0.0.1:*`** (configurable con
+  `MLFLOW_ALLOWED_HOSTS`): el nombre del servicio para la API dentro de la red y localhost con
+  cualquier puerto para el navegador con el puerto publicado que sea. CORS se deja por defecto
+  (orígenes localhost en cualquier puerto). `healthcheck` a `/health` con `python -c urllib`.
+- **Alternativas.** Imagen propia con `pip install mlflow==3.18.0` (más mantenimiento, mismo
+  resultado); `--disable-security-middleware` o `--allowed-hosts '*'` (abre el servidor a *DNS
+  rebinding*); backend PostgreSQL (otro servicio para un laboratorio de un solo usuario);
+  artefactos en una carpeta local compartida por volumen (no funciona desde el host).
+- **Justificación / evidencia.** Sin `--allowed-hosts`, un MLflow 3.18 de prueba devolvió
+  **403** a `/` y a `/api/2.0/mlflow/experiments/get-by-name` con `Host: mlflow:5000` (200 con
+  `Host: localhost`) — y su `/health` respondía 200, así que `/health` de la API habría dicho
+  `ok` sin poder trazar. Con la lista: `Host: localhost:5002` y `127.0.0.1:5002` → 200,
+  `Host: evil.com` → 403; la API registró 139 trazas y la evaluación con `--mlflow` subió sus
+  4 artefactos (`casos.json`, `reporte.txt`, `resultados.jsonl`, `resumen.json`).
+
+## D47 · Compose: dependencia api → mlflow, variables y salud
+
+- **Contexto.** El evaluador interrumpe MLflow; la API no puede depender de él para arrancar ni
+  para responder (D43). Las variables `MLFLOW_HTTP_REQUEST_*` y `MLFLOW_ASYNC_TRACE_LOGGING_*`
+  solo las lee MLflow del entorno real del proceso.
+- **Decisión.**
+  - `depends_on: [mlflow]` **simple** (orden de arranque), **sin `condition:
+    service_healthy`**: la API arranca aunque MLflow tarde o falle y se conecta sola en su hilo
+    de fondo (D43).
+  - `env_file: .env` con `required: false` (sin `.env` la API levanta igual y `/health` dice
+    `degradado` por falta de clave). En `environment` se fijan, por encima de `.env`,
+    `DATOS_DIR=/app/datos`, `MLFLOW_TRACKING_URI=http://mlflow:5000` (el `.env.example` trae
+    `http://localhost:5000` para uso fuera de Docker) y las variables de D43 (`TIMEOUT=3`,
+    `MAX_RETRIES=1`, cola 200, 4 hilos, exportación asíncrona), interpolables desde el entorno
+    o `.env`.
+  - Datos: `${DATOS_HOST_DIR:-./datos}:/app/datos:ro`.
+  - `healthcheck` en ambos servicios (la API usa `/health`, que responde 200 también
+    degradada: el contenedor sigue *healthy* con MLflow caído, que es lo correcto porque sigue
+    atendiendo) y `restart: unless-stopped` (un `docker compose stop mlflow` del evaluador no
+    se revierte solo; un fallo sí).
+  - Sin `version:` (obsoleto en Compose v2) y `name: novapedidos`.
+- **Alternativas.** `condition: service_healthy` (la API no arrancaría con MLflow caído:
+  contradice el requisito); sin `depends_on` (MLflow arranca igual con `docker compose up`,
+  pero `docker compose up api` no lo levantaría); `restart: always` (reiniciaría un MLflow
+  detenido a propósito al reiniciar Docker).
+- **Justificación / evidencia.** `evidencia/sesiones/2026-11-23_F9/resiliencia_docker.txt`
+  (gpt-4.1-nano, 5 POST por fase, todos 200): arriba p50 1.85 s; `stop mlflow` → `/health`
+  `degradado` en 0.10 s, POST p50 1.94 s, `/health` 17 ms; `start` → `ok` en 4.1 s y 5/5
+  trazas nuevas en 1.6 s sin reiniciar la API; `pause` (colgado) → `degradado` en 1.02 s, POST
+  p50 1.73 s, `/health` 1.02 s (el timeout de 1 s, D24); `unpause` → `ok` en 0.93 s y 5/5
+  trazas en 1.5 s. 422 (cuerpo vacío, sin mensajes, fecha inválida, mensajes no lista, JSON
+  malformado) y 404 (C999). Arranque desde `up` hasta `/health` ok: 6–7 s.
+
+## D48 · Puertos configurables
+
+- **Contexto.** El servicio debe escuchar en el 8000 (MLflow en el 5000), pero en la máquina de
+  desarrollo el 8000 lo ocupa otro proyecto.
+- **Decisión.** `"${API_PUERTO:-8000}:8000"` y `"${MLFLOW_PUERTO:-5000}:5000"`: por defecto los
+  del enunciado; para pruebas, otros puertos y nombre de proyecto propio
+  (`API_PUERTO=8002 MLFLOW_PUERTO=5002 docker compose -p novapedidos-prueba up -d`). Dentro de
+  la red los puertos no cambian (la API siempre usa `mlflow:5000`).
+- **Alternativas.** Puertos fijos (no se podría probar junto a otros proyectos); un
+  `docker-compose.override.yml` local (otro archivo, fácil de olvidar versionado).
+- **Justificación / evidencia.** Pruebas y clon limpio en 8002/5002 sin tocar el contenedor
+  que ocupa el 8000.
 
 ---
 

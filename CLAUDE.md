@@ -37,7 +37,14 @@ uv run ruff format                       # formato
 cp .env.example .env                     # y pegar OPENROUTER_API_KEY
 uv run python scripts/ping_llm.py        # prueba de acceso a OpenRouter (costo y latencia)
 uv run python scripts/capturar.py <url> <salida.png> [--pagina-completa]   # evidencia
+docker compose up --build                # API (8000) + MLflow (5000); datos en ./datos
+API_PUERTO=8002 MLFLOW_PUERTO=5002 docker compose -p novapedidos-prueba up -d --build  # pruebas
+uv run python scripts/probar_resiliencia_docker.py --proyecto novapedidos-prueba \
+    --api http://127.0.0.1:8002 --mlflow-uri http://127.0.0.1:5002     # stop/start, pause
 ```
+
+El puerto 8000 del host puede estar ocupado por otro proyecto: para pruebas usar puertos y
+nombre de proyecto propios y bajar solo ese proyecto (`docker compose -p … down -v`).
 
 ## Estructura
 

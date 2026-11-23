@@ -1,0 +1,66 @@
+Evaluación · docker · HTTP · http://127.0.0.1:8002/v1/pedidos/interpretar
+Archivos: ejemplos/mensajes_dev.jsonl, eval/casos_propios.jsonl · casos: 139 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 138/139 = 99.3 %
+
+Exactitud por tipo:
+  agotado                8/8   100.0 %
+  ambiguo                9/9   100.0 %
+  audio                  5/5   100.0 %
+  borde_regla            7/7   100.0 %
+  correccion             9/9   100.0 %
+  credito                8/8   100.0 %
+  fuera_catalogo        10/10  100.0 %
+  fuera_de_alcance       7/7   100.0 %
+  habitual              11/11  100.0 %
+  inyeccion             12/12  100.0 %
+  no_existe              6/6   100.0 %
+  simple                21/21  100.0 %
+  sin_cantidad           6/6   100.0 %
+  unidades              11/11  100.0 %
+  varios_mensajes        8/9    88.9 %
+
+Exactitud por archivo:
+  casos_propios.jsonl           55/55  100.0 %
+  mensajes_dev.jsonl            83/84   98.8 %
+
+Por calificador:
+  caso_exacto          138/139  99.3 %
+  estado               139/139 100.0 %
+  lineas               138/139  99.3 %
+  total                138/139  99.3 %
+  fecha_entrega        139/139 100.0 %
+  motivos_revision     139/139 100.0 %
+  pendientes           139/139 100.0 %
+  sustituciones        139/139 100.0 %
+  lineas_estricto      138/139  99.3 %
+  integridad_precios   139/139 100.0 %
+  mensaje_cliente      139/139 100.0 %
+  latencia             138/139  99.3 %
+
+Latencia por pedido (punta a punta): p50 1.58 s · p95 2.17 s · máx 5.48 s · media 1.65 s
+Tokens entrada/salida (en caché): 0 / 0 (0)
+Costo: no disponible (la API no expone el costo)
+Duración de la corrida: 57.8 s
+
+Fallos (1):
+✗ D073 [varios_mensajes] C030 2026-12-08T07:41
+    mensajes: ['Hola buen día, mándeme agua pura cristal 600 ml: 2 y 6 cajas de jabón rosa', 'Le hago mi pedido: 3 de naranjita 600', 'Corrijo: de jaabón de tocador rosa 100 g son nueve. Dios lo bendiga']
+    - lineas: faltan [('B07', 2)]; sobran [('B07', 8)]
+    - total: 2276.64 ≠ 1916.64
+    - lineas_estricto: línea 1: cantidad 8 ≠ 2, subtotal 480.0 ≠ 120.0
+    esperado: confirmado · líneas [B07×2, P01×9, B04×3] · total 1916.64 · fecha 2026-12-10 · motivos [] · pendientes [∅]
+    obtenido: confirmado · líneas [B07×8, P01×9, B04×3] · total 2276.64 · fecha 2026-12-10 · motivos [] · pendientes [∅]
+
+Casos exactos con otros calificadores en 0 (1):
+  D001 [unidades] latencia: 5.48 s > 5.00 s
+
+--- Notas de la Fase 9 (agregadas a mano) ---
+Origen: copia limpia del árbol de trabajo (git ls-files -co --exclude-standard) en una carpeta
+temporal fuera del repo + datos/ + .env (= .env.example con la clave), levantada con
+`API_PUERTO=8002 MLFLOW_PUERTO=5002 docker compose -p novapedidos-clon up --build`; evaluación
+desde el repo con `uv run python eval/correr.py --url http://127.0.0.1:8002
+ejemplos/mensajes_dev.jsonl eval/casos_propios.jsonl --concurrencia 4 --marca docker`.
+Costo: la API no lo expone; según las etiquetas `llm.costo_usd` de las 139 trazas que la API
+del contenedor registró en su MLflow: USD 0.0337 (USD 0.00024 por caso), modelo
+openai/gpt-4.1-nano.

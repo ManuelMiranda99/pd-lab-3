@@ -188,10 +188,10 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** todo se levanta con `docker compose up` sin intervención.
 **Requisito PDF:** §4.
 
-- [ ] F9.1 `Dockerfile` de la API (sin datos ni credenciales; usuario no root) y servicio `mlflow` (backend sqlite/volumen).
-- [ ] F9.2 `docker-compose.yml`: `api` (8000) y `mlflow` (5000), `datos/` montado de solo lectura, `.env` por `env_file`, healthchecks, `restart`.
-- [ ] F9.3 Prueba de resiliencia: `docker compose stop mlflow` → la API responde y `/health` = `degradado`; `start` → `ok`.
-- [ ] F9.4 Prueba de clon limpio: clonar en carpeta temporal, copiar datos y `.env`, `docker compose up`, correr eval.
+- [x] F9.1 `Dockerfile` de la API (sin datos ni credenciales; usuario no root) y servicio `mlflow` (backend sqlite/volumen).
+- [x] F9.2 `docker-compose.yml`: `api` (8000) y `mlflow` (5000), `datos/` montado de solo lectura, `.env` por `env_file`, healthchecks, `restart`.
+- [x] F9.3 Prueba de resiliencia: `docker compose stop mlflow` → la API responde y `/health` = `degradado`; `start` → `ok`.
+- [x] F9.4 Prueba de clon limpio: clonar en carpeta temporal, copiar datos y `.env`, `docker compose up`, correr eval.
 
 **Verificación manual:** `docker compose up -d`, `curl localhost:8000/health`, parar MLflow y repetir.
 
