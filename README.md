@@ -38,7 +38,7 @@ sigue respondiendo y `/health` pasa a `degradado` con el motivo.
 
 - **Docker** con **Compose v2** (`docker compose version`).
 - Una **clave de OpenRouter** (<https://openrouter.ai/keys>) con saldo: una evaluación completa
-  de 177 casos cuesta ≈ USD 0.04.
+  de 185 casos cuesta ≈ USD 0.04.
 - Los **datos publicados** en el GES (los 5 parquet).
 - Solo para reproducir la evaluación y desarrollar: [`uv`](https://docs.astral.sh/uv/) (instala
   Python 3.11 y las dependencias de `uv.lock`).
@@ -108,6 +108,11 @@ siendo 8000):
 API_PUERTO=8080 MLFLOW_PUERTO=5050 docker compose up -d --build
 ```
 
+El proyecto de Compose se llama `novapedidos` (contenedores `novapedidos-api-1` y
+`novapedidos-mlflow-1`, volumen `novapedidos_mlflow-datos`). Si en la misma máquina ya hay otra
+copia levantada, usa otro nombre para no compartir el volumen:
+`docker compose -p otro-nombre up -d --build` (y `-p otro-nombre` en `stop`/`start`/`down`).
+
 (en ese caso usa `8080`/`5050` en lugar de `8000`/`5000` en todos los comandos de abajo).
 Para apagar: `docker compose down` (con `-v` también borra las trazas y runs de MLflow, que viven
 en el volumen `mlflow-datos`).
@@ -153,6 +158,30 @@ Los errores tienen la forma `{"error": "...", "mensaje": "...", "detalles": [{"c
 (caída o límite de OpenRouter), la API responde **503** `interprete_no_disponible`, nunca 500 ni
 un pedido inventado.
 
+**Validación de la solicitud** (422 con el motivo si no se cumple):
+
+| Campo | Regla |
+|---|---|
+| `cliente_id` | texto de 1 a 64 caracteres; se ignoran espacios al inicio y al final y no distingue mayúsculas (`"c001"` = `"C001"`). Si no existe → 404. |
+| `fecha_hora` | exactamente `AAAA-MM-DDTHH:MM` (sin segundos ni zona), fecha real, año entre 2000 y 2099. |
+| `mensajes` | lista de 1 a 50 textos; cada uno de 1 a 2000 caracteres (sin contar espacios al inicio y al final). |
+| otros campos | se ignoran. |
+
+**Casos de borde del pedido** (según `politicas.md`, sin adivinar):
+
+- Cantidades que no son unidades de venta enteras (`2.5 fardos`, `1/2 quintal`, `medio
+  quintal`, `dos y medio fardos`) o en medidas con las que no se vende (`25 libras`, `6 rollos`,
+  `3 litros`) → pendiente `cantidad_no_convertible`; nunca se redondean.
+- Unidades sueltas con diminutivos (`24 botellitas`, `24 sobrecitos`) se convierten como
+  botellas o sobres, solo si la conversión es exacta.
+- Variantes que el catálogo no tiene (`sopa rápida de res`, `agua pura de 1 litro`) →
+  `producto_no_existe`; no se cambian por el producto más parecido.
+- Un pedido que queda vacío (el cliente cancela todo, pide 0 o una cantidad negativa) es
+  `fuera_de_alcance` (`politicas.md` §8: sin líneas, total 0, `fecha_entrega` null) y el
+  mensaje dice que no se registraron productos.
+- "coca"/"cocas" se tratan como las kolas del catálogo (ejemplo de `politicas.md` §1); una
+  marca que no se vende (`pepsi`) es `producto_no_existe`.
+
 ### MLflow caído
 
 ```bash
@@ -190,7 +219,7 @@ Conjuntos (todos en el formato de `mensajes_dev.jsonl`: `id`, `tipo`, `entrada`,
 | `ejemplos/mensajes_dev.jsonl` | 84 | casos publicados |
 | `eval/casos_variantes.jsonl` | 24 | paráfrasis nuevas del catálogo de problemas |
 | `eval/casos_control.jsonl` | 14 | control de generalización (no se usaron para ajustar) |
-| `eval/casos_propios.jsonl` | 55 | **casos propios**: inyección, bordes de reglas, situaciones fuera del catálogo |
+| `eval/casos_propios.jsonl` | 63 | **casos propios**: inyección, bordes de reglas, situaciones fuera del catálogo (P056–P063: hallazgos del QA, D50) |
 
 **a) Contra la API en Docker (por HTTP)**, con el stack del paso 3 arriba, registrando la corrida
 en el MLflow del contenedor:
@@ -260,7 +289,13 @@ uv run python scripts/probar_resiliencia_docker.py --proyecto novapedidos \
 Integridad de precios 100 % en todas las corridas. La capa de resolución en código aporta más
 que el cambio de modelo (74 % → 99 % con el mismo modelo).
 
-**Evaluación final con el modelo entregado, en Docker y por HTTP**
+**Re-evaluación tras el QA como evaluador (D50), en Docker y por HTTP**
+([`evidencia/qa_evaluador/`](evidencia/qa_evaluador/README.md)): **185 / 185 (100 %)**. Por
+conjunto: dev 84/84, variantes 24/24, control 14/14 y propios 63/63. Integridad de precios
+100 %, 0 errores, p50 0.78 s, p95 1.03 s y máximo 1.54 s. Ahí mismo están los hallazgos del QA
+de caja negra y cómo se corrigieron.
+
+**Evaluación final anterior al QA, con el modelo entregado, en Docker y por HTTP**
 ([`evidencia/evaluacion_final/`](evidencia/evaluacion_final/reporte.txt)):
 
 | Conjunto | Exactos |
@@ -282,7 +317,7 @@ reiniciar la API ([`evidencia/resiliencia/`](evidencia/resiliencia/)).
 ## Limitaciones conocidas
 
 - **Prompt y resolución ajustados iterativamente** sobre los casos dev, variantes y propios
-  (D37, D40, D49). Los casos de control se corrieron una vez, pero la exactitud en mensajes no
+  (D37, D40, D49, D50). Los casos de control se corrieron una vez, pero la exactitud en mensajes no
   publicados puede ser menor que la medida aquí.
 - **Variabilidad del modelo**: aun con `temperature=0`, entre repeticiones la salida cambia en
   algún caso aislado (≤ 1 de 177 en la comparación).
@@ -303,7 +338,7 @@ reiniciar la API ([`evidencia/resiliencia/`](evidencia/resiliencia/)).
 
 ```bash
 uv sync                                   # dependencias según uv.lock
-uv run pytest -q                          # 465 pruebas; no requieren datos ni clave (las que los
+uv run pytest -q                          # 487 pruebas; no requieren datos ni clave (las que los
                                           # necesitan se saltan si faltan)
 uv run ruff check && uv run ruff format --check
 uv run python scripts/ping_llm.py         # prueba de acceso a OpenRouter (costo y latencia)
@@ -330,6 +365,6 @@ scripts/           ping_llm, capturar, explorar_casos, comparar_alternativas, pr
 evidencia/         comparación, capturas de MLflow, evaluación final, resiliencia, sesiones
 Dockerfile, docker-compose.yml, .env.example
 CLAUDE.md          contexto para el agente de programación; PLAN.md y BITACORA.md: plan y bitácora
-DECISIONES.md      decisiones con alternativas y justificación (D01–D49)
+DECISIONES.md      decisiones con alternativas y justificación (D01–D50)
 politicas.md, catalogo_problemas.md   reglas del negocio y situaciones observadas (publicadas)
 ```

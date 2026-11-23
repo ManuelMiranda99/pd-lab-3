@@ -35,6 +35,10 @@ class Unidad(StrEnum):
     VENTA = "venta"  # fardo, caja, display, quintal, "3 de …" o sin unidad
     UNIDAD_SUELTA = "unidad_suelta"  # botellas, latas, bolsas, sobres, unidades, paquetitos
     DOCENA = "docena"  # "una docena de …" (media docena = 6 en `unidad_suelta`)
+    #: Cantidad que no es un número entero de unidades de venta ni de unidades sueltas
+    #: ("2.5 fardos", "1/2 quintal", "25 libras", "6 rollos"). Nunca se redondea: el motor
+    #: registra `cantidad_no_convertible`. Solo la asigna la resolución en código (no el LLM).
+    NO_CONVERTIBLE = "no_convertible"
 
 
 class Accion(StrEnum):

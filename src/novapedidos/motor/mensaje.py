@@ -91,6 +91,11 @@ def _frase_pendiente(pendiente: Pendiente, datos: Datos) -> str:
     producto = datos.producto(pendiente.opciones[0]) if pendiente.opciones else None
     if producto is None:
         return f"La cantidad de «{_cita(pendiente.texto)}» no corresponde a empaques completos."
+    if producto.unidades_por_empaque == 1:
+        return (
+            f"La cantidad de «{_cita(pendiente.texto)}» no corresponde a "
+            f"{plural_unidad(producto.unidad_venta, 2)} completos."
+        )
     return (
         f"La cantidad de «{_cita(pendiente.texto)}» no completa "
         f"{plural_unidad(producto.unidad_venta, 2)} enteros "
@@ -98,11 +103,23 @@ def _frase_pendiente(pendiente: Pendiente, datos: Datos) -> str:
     )
 
 
-def redactar_mensaje(respuesta: RespuestaPedido, fecha_hora: datetime, datos: Datos) -> str:
-    """Mensaje breve y cordial en español para el cliente, a partir de la respuesta calculada."""
+def redactar_mensaje(
+    respuesta: RespuestaPedido, fecha_hora: datetime, datos: Datos, *, pedido_vacio: bool = False
+) -> str:
+    """Mensaje breve y cordial en español para el cliente, a partir de la respuesta calculada.
+
+    `pedido_vacio`: el cliente sí escribió un pedido, pero no quedó ningún producto (lo canceló
+    todo, quitó lo pedido o pidió 0); el estado es `fuera_de_alcance` (D19) y el mensaje lo
+    dice en lugar de tratarlo como una consulta (D50)."""
     partes = [saludo(fecha_hora)]
     if respuesta.estado is EstadoPedido.FUERA_DE_ALCANCE:
-        partes.append("Gracias por escribirnos. Un asesor atenderá su consulta en breve.")
+        if pedido_vacio:
+            partes.append(
+                "No registramos productos en su pedido. Si desea pedir algo, indíquenos "
+                "producto y cantidad. ¡Gracias!"
+            )
+        else:
+            partes.append("Gracias por escribirnos. Un asesor atenderá su consulta en breve.")
         return " ".join(partes)
 
     productos = [

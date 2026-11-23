@@ -1,8 +1,9 @@
 """Chequeo de dependencias para `GET /health` (`DECISIONES.md` D24).
 
-MLflow se consulta con `GET <MLFLOW_TRACKING_URI>/health`, timeout de 1 s y caché de 1 s
-(D24, ajustado en D43), para que `/health` responda en ≤ 1 s aunque MLflow esté colgado, refleje
-una caída en ~1 s y no se golpee MLflow más de una vez por segundo.
+MLflow se consulta con `GET <MLFLOW_TRACKING_URI>/health` y timeout de 1 s (D24, ajustado en
+D43). Solo las **fallas** se guardan 1 s en caché (D50): así `/health` responde en ≤ 1 s
+aunque MLflow esté colgado y no lo consulta en cada llamada mientras está caído, pero una
+caída se refleja en la siguiente consulta (antes un "ok" en caché podía durar hasta 1 s).
 """
 
 from __future__ import annotations
@@ -42,7 +43,7 @@ def _ping_http(url: str, timeout: float) -> EstadoDependencia:
 
 
 class MonitorMlflow:
-    """Chequea MLflow con timeout corto y guarda el resultado unos segundos.
+    """Chequea MLflow con timeout corto y guarda las fallas `ttl` segundos.
 
     - URI vacía → `desactivado` (no es una dependencia; no degrada).
     - URI no HTTP (`file:`, `sqlite:`, ruta local) → `local` (no hay servidor que consultar).
@@ -75,7 +76,11 @@ class MonitorMlflow:
     def estado(self) -> EstadoDependencia:
         with self._candado:
             ahora = self._reloj()
-            if self._ultimo is not None and ahora - self._ultimo[0] < self.ttl:
+            if (
+                self._ultimo is not None
+                and not self._ultimo[1].disponible
+                and ahora - self._ultimo[0] < self.ttl
+            ):
                 return self._ultimo[1]
             resultado = self._consultar()
             self._ultimo = (self._reloj(), resultado)

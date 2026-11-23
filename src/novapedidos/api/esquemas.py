@@ -1,7 +1,8 @@
 """Esquemas de la API: solicitud de `POST /v1/pedidos/interpretar`, errores y `/health`.
 
 La respuesta 200 es `novapedidos.contrato.RespuestaPedido` (D21). Límites de la solicitud
-(`DECISIONES.md` D26): `cliente_id` de 1 a 64 caracteres; de 1 a 50 mensajes; cada mensaje de
+(`DECISIONES.md` D26): `cliente_id` de 1 a 64 caracteres (sin espacios al inicio y al final y
+sin distinguir mayúsculas: "c001" = "C001", D50); de 1 a 50 mensajes; cada mensaje de
 1 a 2000 caracteres (sin contar espacios al inicio y al final). Los campos extra se ignoran.
 """
 
@@ -40,7 +41,10 @@ FechaHora = Annotated[
 ]
 
 ClienteId = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_LARGO_CLIENTE_ID)
+    str,
+    StringConstraints(
+        strip_whitespace=True, to_upper=True, min_length=1, max_length=MAX_LARGO_CLIENTE_ID
+    ),
 ]
 TextoMensaje = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_LARGO_MENSAJE)
@@ -66,7 +70,9 @@ class SolicitudPedido(BaseModel):
         },
     )
 
-    cliente_id: ClienteId = Field(description="Identificador del cliente, p. ej. C001.")
+    cliente_id: ClienteId = Field(
+        description="Identificador del cliente, p. ej. C001 (sin distinguir mayúsculas)."
+    )
     fecha_hora: FechaHora
     mensajes: list[TextoMensaje] = Field(
         min_length=1,

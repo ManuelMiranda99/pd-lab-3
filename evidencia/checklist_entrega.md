@@ -9,19 +9,19 @@ funcionamiento, Entregables y Anexo). ✅ = cumplido y verificado · ⚠️ = pe
 |---|---|---|---|
 | 1 | Aplicación con LangChain y modelos de OpenRouter configurados en `.env` | ✅ | `src/novapedidos/llm/cliente.py` (`ChatOpenAI` → OpenRouter), `config.py`, `.env.example` (`OPENROUTER_MODEL=google/gemini-2.5-flash-lite`); D27, D30 |
 | 1 | Lo que se consume del modelo, con salida estructurada | ✅ | `llm/esquema.py` + `with_structured_output(method="json_schema", strict)`; D28 |
-| 1 | Cálculos de negocio (precios, descuentos, totales, fechas, crédito) con código probado | ✅ | `src/novapedidos/motor/`; `tests/test_motor_calculos.py`, `test_motor_pedido*.py`, `test_regresion_dev.py` (465 pruebas); D03–D19 |
+| 1 | Cálculos de negocio (precios, descuentos, totales, fechas, crédito) con código probado | ✅ | `src/novapedidos/motor/`; `tests/test_motor_calculos.py`, `test_motor_pedido*.py`, `test_regresion_dev.py` (487 pruebas); D03–D19, D50 |
 | 1 | Ningún mensaje altera precios, descuentos, crédito ni el comportamiento | ✅ | D29/D32/D41; 12 casos `inyeccion` + 2 `manipulacion`: 14/14 e integridad de precios 100 % (`evidencia/evaluacion_final/reporte.txt`, `comparacion/comparacion.md`); `test_mensajes_de_precio_no_alteran_montos` |
 | 2 | API que cumple el contrato del Anexo, con validación | ✅ | `src/novapedidos/api/`; ver sección Anexo |
 | 2 | Pruebas automatizadas que no dependen del modelo | ✅ | intérprete inyectado y falso en tests (D25); CI sin datos ni clave (`.github/workflows/ci.yml`) |
 | 3 | Trazas de las solicitudes en MLflow | ✅ | D42; `evidencia/mlflow/trazas_api_lista.png`, `traza_solicitud_spans.png` |
-| 3 | Conjunto de evaluación con casos propios + publicados y calificaciones de calidad | ✅ | `eval/casos_propios.jsonl` (55), variantes (24), control (14), dev (84); 11 calificadores con código (D33, D36); `evidencia/mlflow/evaluacion_*.png` |
+| 3 | Conjunto de evaluación con casos propios + publicados y calificaciones de calidad | ✅ | `eval/casos_propios.jsonl` (63), variantes (24), control (14), dev (84); 11 calificadores con código (D33, D36); `evidencia/mlflow/evaluacion_*.png` |
 | 3 | Comparación de ≥ 2 alternativas en calidad, latencia y costo que respalde la configuración | ✅ | 6 modelos + arquitectura sin resolución: `evidencia/comparacion/comparacion.md`, CSV y gráficas; D49 |
 | 4 | API y MLflow con `docker compose up` siguiendo el README | ✅ | `docker-compose.yml`, `Dockerfile`; simulación del docente abajo |
 | 4 | Datos y credenciales fuera de imágenes y repo; `.env.example` | ✅ | `.gitignore` y `.dockerignore` excluyen `datos/`, `*.parquet`, `.env`, `*.pdf`; imagen revisada (solo `.venv`, `src`, `README.md`, `pyproject.toml`, `uv.lock`, `datos/` vacío); la clave no aparece en archivos versionados, nuevos ni en el historial |
 | 4 | MLflow no disponible ⇒ API responde y `/health` lo refleja | ✅ | D43; `evidencia/resiliencia/resiliencia_docker_flashlite.txt` (stop y pause: todos 200, `degradado` en ≤ 1 s, recuperación sin reiniciar) |
 | 5 | Repo en GitHub con estructura clara y archivo de contexto para el agente | ✅ | `CLAUDE.md`, `.claude/skills/`, `PLAN.md`, `BITACORA.md`; estructura en `README.md` |
 | 5 | `README.md` para levantar el producto y reproducir la evaluación | ✅ | `README.md` §1–§5 (seguido al pie de la letra en la simulación) |
-| 5 | `DECISIONES.md` con decisiones, alternativas y justificación, incluida la elección del modelo | ✅ | `DECISIONES.md` (resumen ejecutivo + D01–D49; modelo en D49) |
+| 5 | `DECISIONES.md` con decisiones, alternativas y justificación, incluida la elección del modelo | ✅ | `DECISIONES.md` (resumen ejecutivo + D01–D50; modelo en D49) |
 
 ## Anexo (contrato)
 
@@ -48,7 +48,7 @@ funcionamiento, Entregables y Anexo). ✅ = cumplido y verificado · ⚠️ = pe
 | Solicitudes inválidas | ✅ | 422/404 verificados en Docker |
 | MLflow interrumpido temporalmente | ✅ | `resiliencia_docker_flashlite.txt` |
 | Latencia | ✅ | p50 0.83 s, p95 1.08 s por HTTP con 4 en paralelo |
-| Estado, líneas, total, fecha y motivos correctos | ✅ / ⚠️ | 175/177 y 177/177 en las dos corridas en Docker. Reserva: con 4 solicitudes en paralelo OpenRouter devolvió 429 en 2 de 177 (503 de la API, sin pedido inventado); ver "Riesgo abierto" |
+| Estado, líneas, total, fecha y motivos correctos | ✅ / ⚠️ | 175/177 y 177/177 en las dos corridas en Docker; tras el QA de caja negra (D50, `evidencia/qa_evaluador/`) 185/185. Reserva: con 4 solicitudes en paralelo OpenRouter devolvió 429 en 2 de 177 (503 de la API, sin pedido inventado); ver "Riesgo abierto" |
 | Evidencia en MLflow, análisis y justificación | ✅ | `evidencia/mlflow/`, `evidencia/comparacion/`, `DECISIONES.md` |
 
 ## Entregables
@@ -100,7 +100,7 @@ costo solo está en las trazas; y la forma de los errores y el 503. Ningún paso
 
 ## Otras verificaciones
 
-- `uv run ruff check`, `uv run ruff format --check`, `uv run pytest -q` (465 pasan). ✅
+- `uv run ruff check`, `uv run ruff format --check`, `uv run pytest -q` (487 pasan tras D50). ✅
 - CI: se agregó el trabajo `imagen-docker` (`docker build` sin push y `docker compose config`). ✅
 - Secretos: la clave real no aparece en archivos versionados ni nuevos, ni en el historial de
   git, ni en la imagen; no hay patrones `sk-or-v1-…` ni `Bearer …`. ✅

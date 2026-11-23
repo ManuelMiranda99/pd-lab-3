@@ -126,7 +126,8 @@ def test_api_con_mlflow_en_puerto_cerrado_responde_rapido_y_health_degradado(dat
         salud = cliente.get("/health").json()
         assert time.perf_counter() - inicio < 1.5
         assert salud["estado"] == "degradado"
-        assert salud["dependencias"]["trazas"] == "conectando"
+        # con MLflow caído las trazas quedan en espera (no "activas" ni "conectando", D50)
+        assert salud["dependencias"]["trazas"] == "en espera (MLflow no disponible)"
         assert not registrador.listo
     finally:
         registrador.detener()

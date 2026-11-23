@@ -82,13 +82,13 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D21 | Contrato compartido | `novapedidos.contrato` (Pydantic): montos `Decimal` → número de 2 decimales en JSON; `ErrorClienteInexistente` para el 404 |
 | D22 | Errores 404 y 422 | `{"error", "mensaje", "detalles":[{campo, mensaje, tipo}]}` en español; 422 nombra el campo y resume todos los problemas |
 | D23 | Fallos del intérprete y errores internos | 503 (`interprete_no_disponible`, `datos_no_disponibles`, `error_interno`), nunca 500 ni un pedido inventado |
-| D24 | `/health` | MLflow por `GET <uri>/health` (timeout 1 s, caché 1 s desde D43; antes 5 s); también datos e intérprete; `degradado` + `motivo` |
+| D24 | `/health` | MLflow por `GET <uri>/health` (timeout 1 s, caché de 1 s solo de las fallas, D43/D50; antes 5 s); también datos e intérprete; `degradado` + `motivo` |
 | D25 | Elección del intérprete | Protocolo `Interprete` inyectado; `INTERPRETE=llm` (defecto) o `falso`; sin LLM real → 503 claro |
 | D26 | Límites de la solicitud | `cliente_id` 1–64, 1–50 mensajes de 1–2000 caracteres (recortados); campos extra ignorados |
 | D27 | Arquitectura del intérprete | **Una** llamada por pedido con el catálogo completo y compacto en el prompt del sistema (estático, cacheable) y salida estructurada estricta |
 | D28 | Esquema de salida del LLM | Esquema propio plano (`InterpretacionPedido`) con `sku`/`opciones` como enum de los sku del catálogo; sin precio, descuento, crédito ni fecha |
 | D29 | Defensas contra inyección | Mensajes delimitados como datos (`<mensajes>`, `<`/`>` neutralizados), regla explícita en el prompt, esquema sin campos de condiciones, motor como única fuente de cálculos |
-| D30 | Parámetros del cliente | `temperature=0`, timeout 15 s, 2 reintentos con espera exponencial (ajustado en la Fase 11 por los 429), `usage.include` (costo), encabezados `X-Title`/`HTTP-Referer` genéricos |
+| D30 | Parámetros del cliente | `temperature=0`, timeout 8 s por intento (D50; antes 15 s), 2 reintentos con espera exponencial (ajustado en la Fase 11 por los 429), `usage.include` (costo), encabezados `X-Title`/`HTTP-Referer` genéricos |
 | D31 | Resolución post-LLM | Alias exacto, coincidencia palabra por palabra (genérico → ambiguo), difuso solo para `no_existe`, anclaje del texto al mensaje, guardas de unidad y de corrección |
 | D32 | Rechazo del filtro de contenido | Reintento único sin las oraciones manipuladoras; si no queda nada → no es pedido |
 | D33 | Calificadores | Funciones puras 0/1 + detalle; líneas como multiconjunto, total ± 0.005, motivos como conjunto, `texto` de pendientes laxo; `integridad_precios` sin `esperado` |
@@ -108,6 +108,7 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D47 | Compose: dependencias, variables y salud | `depends_on` simple (sin `service_healthy`), variables de D43 en `environment`, datos `:ro`, healthchecks, `restart: unless-stopped` |
 | D48 | Puertos configurables | `API_PUERTO` (8000) y `MLFLOW_PUERTO` (5000) |
 | D49 | Elección del modelo (comparación) | `google/gemini-2.5-flash-lite`: 177/177, p95 ≈ 1.1 s, USD 0.0002 por pedido; resolución ampliada (otra mención, corrección ambigua) |
+| D50 | Correcciones del QA como evaluador | Cantidades no enteras y medidas → `cantidad_no_convertible`; diminutivos de sueltas; corrección sobre "lo de siempre"; variantes no vendidas → `producto_no_existe`; año 2000–2099; `cliente_id` sin mayúsculas; `/health` sin caché del `ok`; timeout 8 s |
 
 ---
 
@@ -527,7 +528,7 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 - **Decisión.** `GET /health` siempre responde 200 con `{"estado", "motivo"?, "dependencias"}`
   (`motivo` solo si `degradado`; `dependencias` es diagnóstico adicional por dependencia):
   - **MLflow**: `GET <MLFLOW_TRACKING_URI>/health` con **timeout de 1 s** y **caché de 1 s**
-    (la caché era de 5 s; se redujo en D43 para que una caída se vea antes) (`api/salud.py`, `MonitorMlflow`, con candado para no duplicar consultas). URI vacía →
+    (la caché era de 5 s; se redujo en D43 para que una caída se vea antes; desde D50 solo se guardan las fallas) (`api/salud.py`, `MonitorMlflow`, con candado para no duplicar consultas). URI vacía →
     `desactivado` (no degrada: MLflow se apagó a propósito); URI no HTTP (`file:`, `sqlite:`,
     ruta) → `local` (no hay servidor que consultar; no degrada); error de red/HTTP → degradado
     con el motivo (p. ej. "MLflow no responde (Connection refused)").
@@ -656,7 +657,7 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 
 - **Contexto.** Latencia acotada, determinismo y medición de costo.
 - **Decisión.** `novapedidos.llm.cliente.crear_modelo_chat`: `temperature=0`, `timeout=20 s`
-  por intento, `max_retries=2` (Fase 11: 15 s por intento y 2 reintentos tras ver 429 con 4 solicitudes en paralelo; peor caso ≈ 45 s + espera; en la práctica < 1.5 s con flash-lite),
+  por intento, `max_retries=2` (Fase 11: 15 s por intento y 2 reintentos tras ver 429 con 4 solicitudes en paralelo; D50: 8 s por intento tras ver un pico de 16 s, peor caso ≈ 24 s + espera; en la práctica < 1.5 s con flash-lite),
   `extra_body={"usage": {"include": True}}` (OpenRouter devuelve `usage.cost`), encabezados
   `HTTP-Referer: https://localhost/novapedidos` y `X-Title: NovaPedidos (laboratorio)` (sin
   datos personales). La clave se pasa como `SecretStr` y nunca se registra.
@@ -1304,6 +1305,46 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
   interpretación, y repetidos salen exactos. Una segunda corrida siguiendo el README en una
   copia limpia dio 177/177. El cliente reintenta una vez (D30); si el 429 persiste la API
   responde 503 sin inventar el pedido.
+
+---
+
+## D50 · Correcciones del QA como evaluador
+
+- **Contexto.** Antes de entregar se hizo QA "de caja negra" como el equipo docente: clon
+  limpio, datos y `.env` según el README, `docker compose up` y ~120 solicitudes no publicadas,
+  inválidas y con MLflow caído (`evidencia/qa_evaluador/`). Contrato, inyección y resiliencia
+  salieron bien, pero aparecieron pedidos `confirmado` con montos equivocados.
+- **Decisión** (todo en código determinista; el prompt no cambia porque un ajuste de
+  redacción hizo fallar P008 de forma estable):
+  1. `Unidad.NO_CONVERTIBLE` (solo la asigna la resolución): el motor siempre registra
+     `cantidad_no_convertible`. La usan `cantidades_no_enteras` (decimales "2.5"/"2,5",
+     fracciones "1/2", "dos y medio", y medidas que no son de venta: libras, kilos, litros,
+     rollos, galones… justo antes del producto, descartando la mención que el modelo partió
+     en dos) y `medias_unidades` con empaque 1 ("medio quintal").
+  2. Una sola lista de unidades sueltas con diminutivos ("botellitas", "sobrecitos",
+     "latitas"): antes la verificación revertía a fardos lo que el modelo sí entendió.
+     Ningún número precedido de `/`, `.` o `,` se toma como cantidad.
+  3. `detectar_correcciones` considera ya pedidas las líneas del último pedido entregado
+     cuando hay "lo de siempre", y acepta la marca después del producto ("que sean 5").
+  4. `variantes_no_vendidas`: un número de presentación o una palabra de sabor/color/tipo que
+     el producto elegido no tiene → `producto_no_existe` (o se quita de las opciones de un
+     ambiguo). Así "sopa rápida de res" no se entrega como de pollo.
+  5. Si el mensaje trae el código del producto ("B01"), la mención se acepta aunque el
+     modelo haya reescrito el texto con el nombre del catálogo.
+  6. API: `fecha_hora` con año entre 2000 y 2099 (antes `9999-12-31` daba 503 por desborde);
+     `cliente_id` sin espacios ni distinción de mayúsculas; `/health` guarda en caché solo las
+     fallas (una caída se ve en la siguiente consulta) y reporta `trazas: en espera` con
+     MLflow caído; timeout por intento al modelo 15 → 8 s (D30) para cortar intentos colgados.
+  7. Pedido que queda vacío (cancelado, 0, negativo): sigue `fuera_de_alcance` (D19) pero el
+     mensaje dice que no se registraron productos en lugar de tratarlo como consulta.
+- **Alternativas.** Pedir al LLM `cantidad` decimal (el esquema estricto exige entero y el
+  motor igual tendría que rechazarla); convertir libras con la presentación ("25 libras" =
+  1 fardo de 1 lb × 25) — se descartó: la política solo convierte sueltas y docenas, y "100
+  libras de arroz" puede ser un quintal; ajustar el prompt (regresión en P008).
+- **Sin cambio.** "coca" = kolas (lo usa `politicas.md` §1); `pendientes[].texto` (D09);
+  `name: novapedidos` en Compose (documentado `-p` en el README).
+- **Evidencia.** Casos propios P056–P063 y pruebas nuevas en `tests/`. Re-evaluación en Docker
+  por HTTP: **185/185**, p95 1.03 s (`evidencia/qa_evaluador/`); los 56 casos del QA 56/56.
 
 ---
 

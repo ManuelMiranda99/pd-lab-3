@@ -302,7 +302,10 @@ def crear_app(
         if isinstance(registrador, RegistradorMlflow):
             # Diagnóstico (no degrada por sí solo): las trazas se activan solas cuando MLflow
             # responde (D43).
-            dependencias["trazas"] = "activas" if registrador.listo else "conectando"
+            if not mlflow.disponible:
+                dependencias["trazas"] = "en espera (MLflow no disponible)"
+            else:
+                dependencias["trazas"] = "activas" if registrador.listo else "conectando"
 
         try:
             proveedor_datos()

@@ -87,6 +87,11 @@ _UNIDADES = frozenset(
         "paquetito",
         "docena",
         "sobre",
+        "sobrecito",
+        "pieza",
+        "piecita",
+        "envase",
+        "frasco",
     ]
 )
 
@@ -154,9 +159,19 @@ _PALABRAS_SUELTAS = (
     "sobre",
     "unidad",
     "pieza",
+    "piecit",
     "docena",
     "sueltas",
     "paquetit",
+    "envase",
+    "frasc",
+)
+
+#: Unidades sueltas con sus diminutivos ("botellitas", "sobrecitos", "latitas"): una sola
+#: fuente para todos los patrones (antes "botellitas" no estaba y se tomaba como fardos).
+_UNIDADES_SUELTA_TXT = (
+    r"botell(?:it)?as?|lat(?:it)?as?|bols(?:it)?as?|sobre(?:cito)?s?|unidad(?:es)?|"
+    r"piez(?:it)?as?|piecitas?|paquetit[oa]s?|envases?|frascos?"
 )
 
 
@@ -186,7 +201,9 @@ def verificar_unidades(menciones: Sequence[Mencion], mensajes: Sequence[str]) ->
     return resultado
 
 
-_PATRON_SUELTAS = r"(botellas?|latas?|latitas?|bolsas?|bolsitas?|sobres?|unidades|piezas?)"
+_PATRON_SUELTAS = rf"(?:{_UNIDADES_SUELTA_TXT})"
+#: Antes de una cantidad no puede ir letra, dígito, punto, coma ni barra ("1/2", "2.5").
+_ANTES_NUMERO = r"(?<![\w./,])"
 
 
 def _numero_con_suelta(cantidad: int, texto_normalizado: str) -> bool:
@@ -196,7 +213,8 @@ def _numero_con_suelta(cantidad: int, texto_normalizado: str) -> bool:
         return True
     escritos = [str(cantidad)] + [p for p, n in NUMEROS_EN_LETRAS.items() if n == cantidad]
     numero = "|".join(map(re.escape, escritos))
-    return re.search(rf"(?<![\w.])({numero})\s+{_PATRON_SUELTAS}\b", texto_normalizado) is not None
+    patron = rf"{_ANTES_NUMERO}({numero})\s+(?:mas\s+)?{_PATRON_SUELTAS}\b"
+    return re.search(patron, texto_normalizado) is not None
 
 
 def _dijo_sueltas(m: Mencion, texto_normalizado: str) -> bool:
@@ -205,7 +223,9 @@ def _dijo_sueltas(m: Mencion, texto_normalizado: str) -> bool:
     inicio = normalizar(m.texto).split()[:2]
     if not inicio:
         return False
-    patron = rf"\b{m.cantidad}\s+{_PATRON_SUELTAS}\s+(de\s+)?" + r"\s+".join(map(re.escape, inicio))
+    patron = rf"{_ANTES_NUMERO}{m.cantidad}\s+{_PATRON_SUELTAS}\s+(de\s+)?" + r"\s+".join(
+        map(re.escape, inicio)
+    )
     return re.search(patron, texto_normalizado) is not None
 
 
@@ -236,9 +256,8 @@ NUMEROS_EN_LETRAS: dict[str, int] = {
     "cincuenta": 50,
 }
 _UNIDADES_VENTA_TXT = r"fardos?|farditos?|cajas?|cajitas?|displays?|quintal(?:es)?|paquetes?"
-_UNIDADES_SUELTA_TXT = r"botellas?|latas?|latitas?|bolsas?|bolsitas?|sobres?|unidades|piezas?"
 _PATRON_CANTIDAD = (
-    r"(?<![\w.])(?P<n>\d+|media|" + "|".join(NUMEROS_EN_LETRAS) + r") +"
+    _ANTES_NUMERO + r"(?P<n>\d+|media|" + "|".join(NUMEROS_EN_LETRAS) + r") +"
     r"(?:(?P<u>docenas?|" + _UNIDADES_VENTA_TXT + "|" + _UNIDADES_SUELTA_TXT + r") +)?"
     r"(?:de +)?(?:(?:el|la|los|las) +)?"
 )
@@ -347,7 +366,10 @@ def docenas_de_empaques(menciones: Sequence[Mencion], mensajes: Sequence[str]) -
         inicio = palabras_inicio(m.texto)
         if m.accion == Accion.AGREGAR and inicio:
             patron = (
-                r"(?<![\w.])(?P<n>\d+|media|" + "|".join(NUMEROS_EN_LETRAS) + r") +docenas? +de +"
+                _ANTES_NUMERO
+                + r"(?P<n>\d+|media|"
+                + "|".join(NUMEROS_EN_LETRAS)
+                + r") +docenas? +de +"
                 r"(?:"
                 + _UNIDADES_VENTA_TXT
                 + r") +"
@@ -363,6 +385,104 @@ def docenas_de_empaques(menciones: Sequence[Mencion], mensajes: Sequence[str]) -
                 m = m.model_copy(update={"cantidad": lecturas.pop(), "unidad": Unidad.VENTA})
         resultado.append(m)
     return resultado
+
+
+#: Medidas con las que la distribuidora no vende: una cantidad en ellas no se convierte (D50).
+_MEDIDAS_TXT = (
+    r"libras?|lbs?|kilos?|kgs?|kilogramos?|gramos?|grs?|onzas?|oz|litros?|lts?|mililitros?|"
+    r"galon(?:es)?|rollos?|metros?|cartones?|tiras?|blisters?"
+)
+#: Palabras que distinguen una variante (sabor, color, tipo): si el cliente la dice y el
+#: producto elegido no la tiene, ese producto no es el que pidió (D50).
+_VARIANTES = frozenset(
+    [
+        "res",
+        "pollo",
+        "carne",
+        "camaron",
+        "costilla",
+        "gallina",
+        "uva",
+        "fresa",
+        "pina",
+        "mango",
+        "durazno",
+        "manzana",
+        "naranja",
+        "limon",
+        "mandarina",
+        "chocolate",
+        "vainilla",
+        "coco",
+        "tamarindo",
+        "jamaica",
+        "horchata",
+        "cereza",
+        "menta",
+        "mora",
+        "frambuesa",
+        "sandia",
+        "melon",
+        "banano",
+        "light",
+        "zero",
+        "diet",
+        "dieta",
+        "picante",
+        "queso",
+        "integral",
+        "descremada",
+        "deslactosada",
+        "blanco",
+        "blanca",
+        "amarillo",
+        "amarilla",
+        "rojo",
+        "roja",
+        "negro",
+        "negra",
+        "morado",
+        "rosado",
+        "azul",
+    ]
+)
+
+
+def _numeros_no_enteros(inicio: Sequence[str], texto_suave: str) -> set[int] | None:
+    """Si justo antes del producto hay una cantidad que no es un número entero de unidades
+    (decimal, fracción, "dos y medio", o una medida como "25 libras"), los números que la
+    forman; si no, `None`."""
+    nombre = _ARTICULO_TXT + _unir_palabras(inicio) + r"\b"
+    empaque = rf"(?:(?:{_UNIDADES_VENTA_TXT}|{_UNIDADES_SUELTA_TXT}) +)?"
+    partes: set[int] = set()
+    encontrado = False
+    decimal = rf"{_ANTES_NUMERO}(?P<a>\d+)[.,](?P<b>\d+) +{empaque}" + nombre
+    for x in re.finditer(decimal, texto_suave):
+        if int(x.group("b")) != 0:
+            encontrado = True
+            partes |= {int(x.group("a")), int(x.group("b"))}
+    fraccion = rf"{_ANTES_NUMERO}(?P<a>\d+) ?/ ?(?P<b>\d+) +{empaque}" + nombre
+    for x in re.finditer(fraccion, texto_suave):
+        a, b = int(x.group("a")), int(x.group("b"))
+        if b != 0 and a % b != 0:
+            encontrado = True
+            partes |= {a, b}
+    y_medio = rf"{_ANTES_NUMERO}{_NUMERO_TXT} +y +medi[oa] +{empaque}" + nombre
+    for x in re.finditer(y_medio, texto_suave):
+        encontrado = True
+        partes.add(_numero(x.group("n")))
+    medida = (
+        rf"{_ANTES_NUMERO}(?P<n>\d+(?:[.,]\d+)?|medi[oa]|{'|'.join(NUMEROS_EN_LETRAS)}) +"
+        rf"(?:{_MEDIDAS_TXT}) +(?:y +medi[oa] +)?" + nombre
+    )
+    for x in re.finditer(medida, texto_suave):
+        encontrado = True
+        n = x.group("n")
+        if n.isdigit():
+            partes.add(int(n))
+        elif n in NUMEROS_EN_LETRAS:
+            partes.add(NUMEROS_EN_LETRAS[n])
+    return partes if encontrado else None
 
 
 @dataclass
@@ -467,8 +587,9 @@ class ResolvedorProductos:
         """ "Una caja y media de cloro", "medio fardo de agua": no es una unidad de venta
         completa (§2, D40). La mención pasa a unidades sueltas con una cantidad que **no** es
         múltiplo del empaque (n × empaque + empaque // 2), así el motor registra
-        `cantidad_no_convertible` en lugar de redondear. Solo menciones `sku` que agregan o
-        corrigen, con empaque ≥ 2 y una única lectura."""
+        `cantidad_no_convertible` en lugar de redondear. Si el empaque es 1 ("medio quintal de
+        arroz") no hay número de sueltas que lo exprese: pasa a `no_convertible` (D50). Solo
+        menciones `sku` que agregan o corrigen y con una única lectura."""
         texto = normalizar_suave(" ".join(mensajes))
         resultado = []
         for m in menciones:
@@ -478,26 +599,109 @@ class ResolvedorProductos:
                 m.resolucion == Resolucion.SKU
                 and m.accion != Accion.QUITAR
                 and producto is not None
-                and producto.unidades_por_empaque >= 2
                 and inicio
             ):
                 nombre = _ARTICULO_TXT + _unir_palabras(inicio) + r"\b"
                 empaque = r"(?:" + _UNIDADES_VENTA_TXT + r")"
-                y_media = rf"(?<![\w.]){_NUMERO_TXT} +{empaque} +y +medi[oa] +" + nombre
-                media = rf"(?<![\w.])medi[oa] +{empaque} +" + nombre
+                y_media = rf"{_ANTES_NUMERO}{_NUMERO_TXT} +{empaque} +y +medi[oa] +" + nombre
+                media = rf"{_ANTES_NUMERO}medi[oa] +{empaque} +" + nombre
                 mitades = {_numero(x.group("n")) for x in re.finditer(y_media, texto)}
                 if re.search(media, texto):
                     mitades.add(0)
                 if len(mitades) == 1:
                     e = producto.unidades_por_empaque
-                    m = m.model_copy(
-                        update={
+                    if e >= 2:
+                        cambio = {
                             "cantidad": mitades.pop() * e + e // 2,
                             "unidad": Unidad.UNIDAD_SUELTA,
                         }
-                    )
+                    else:
+                        cambio = {
+                            "cantidad": max(m.cantidad or 1, 1),
+                            "unidad": Unidad.NO_CONVERTIBLE,
+                        }
+                    m = m.model_copy(update=cambio)
             resultado.append(m)
         return resultado
+
+    def cantidades_no_enteras(
+        self, menciones: Sequence[Mencion], mensajes: Sequence[str]
+    ) -> list[Mencion]:
+        """Cantidades que no son unidades enteras (`politicas.md` §2: no se redondea; D50):
+
+        - decimales o fracciones justo antes del producto ("2.5 fardos de kola 600", "2,5
+          cajas de…", "1/2 quintal de arroz", "dos y medio fardos de…");
+        - medidas con las que la distribuidora no vende ("25 libras de arroz ceiba", "6 rollos
+          de papel suave 4", "3 litros de cloro").
+
+        La mención pasa a `no_convertible` (el motor registra `cantidad_no_convertible`) y se
+        descartan las menciones repetidas del mismo producto que el modelo sacó del mismo
+        número (con "2.5" el modelo devuelve una mención de 2 y otra de 5)."""
+        texto = normalizar_suave(" ".join(mensajes))
+        resultado: list[Mencion] = []
+        partes_por_sku: dict[str, set[int]] = {}
+        for m in menciones:
+            inicio = palabras_inicio(m.texto)
+            if (
+                m.resolucion != Resolucion.SKU
+                or not m.sku
+                or m.accion == Accion.QUITAR
+                or not inicio
+            ):
+                resultado.append(m)
+                continue
+            if (
+                m.sku in partes_por_sku
+                and m.accion == Accion.AGREGAR
+                and (m.cantidad is None or m.cantidad in partes_por_sku[m.sku])
+            ):
+                continue  # el mismo número partido en dos menciones
+            # Solo cantidades que siguen en unidades de venta: las sueltas ya tienen respaldo
+            # en el mensaje y las medias unidades ya las resolvió `medias_unidades`.
+            partes = _numeros_no_enteros(inicio, texto) if m.unidad == Unidad.VENTA else None
+            if partes is not None:
+                partes_por_sku[m.sku] = partes
+                m = m.model_copy(
+                    update={"cantidad": max(m.cantidad or 1, 1), "unidad": Unidad.NO_CONVERTIBLE}
+                )
+            resultado.append(m)
+        return resultado
+
+    def variantes_no_vendidas(self, m: Mencion) -> Mencion:
+        """El texto pide una **variante** que el catálogo no tiene ("sopa rápida de res" cuando
+        solo hay de pollo, "agua pura de 1 litro" cuando hay de 600 ml y 1.5 L): el modelo o la
+        resolución eligieron el producto más parecido, pero eso sería inventar (regla 4, D50).
+        Cuenta como variante un número (presentación) o una palabra de `_VARIANTES` (sabor,
+        color, tipo) que no está en el vocabulario del producto. Un `sku` así pasa a
+        `no_existe`; un `ambiguo` pierde las opciones que no la tienen."""
+        if m.accion == Accion.QUITAR or m.resolucion == Resolucion.NO_EXISTE:
+            return m
+        contenido = palabras(m.texto, quitar_unidades=True)
+        orden = [p.strip(".") for p in normalizar(m.texto).split() if p.strip(".") in contenido]
+        if orden and orden[0] == str(m.cantidad):
+            orden = orden[1:]  # el modelo dejó la cantidad al inicio del texto ("2 kola 600")
+        fichas = [p for p in orden if re.fullmatch(r"\d+(?:\.\d+)?", p) or p in _VARIANTES]
+        if not fichas:
+            return m
+
+        def la_tiene(sku: str) -> bool:
+            vocab = self._palabras_sku.get(sku, set())
+            return all(formas(p) & vocab for p in fichas)
+
+        if m.resolucion == Resolucion.SKU:
+            if m.sku and not la_tiene(m.sku):
+                return m.model_copy(update={"resolucion": Resolucion.NO_EXISTE, "sku": None})
+            return m
+        opciones = [o for o in m.opciones if la_tiene(o)]
+        if not opciones:
+            return m.model_copy(
+                update={"resolucion": Resolucion.NO_EXISTE, "sku": None, "opciones": []}
+            )
+        if len(opciones) == 1:
+            return m.model_copy(
+                update={"resolucion": Resolucion.SKU, "sku": opciones[0], "opciones": []}
+            )
+        return m.model_copy(update={"opciones": opciones})
 
     def difuso(self, texto: str) -> str | None:
         """sku único muy parecido al texto (errores de ortografía), o `None`."""
@@ -596,6 +800,10 @@ class ResolvedorProductos:
             for p in buscadas
             if formas(p) & todas or (len(p) >= 4 and any(fuzz.ratio(p, f) >= 80 for f in fichas))
         ]
+        if buscadas and not conservadas and m.sku and m.sku.lower() in fichas:
+            # El cliente escribió el código del producto ("B01 x2", un JSON con "sku": "B01")
+            # y el modelo puso el nombre del catálogo: el pendiente o la línea citan el código.
+            return m.model_copy(update={"texto": m.sku})
         if buscadas and not conservadas:
             # Ninguna palabra del texto está en la conversación: el modelo inventó el producto.
             # Nunca se entrega algo que el cliente no nombró; queda como pendiente (D37).
@@ -637,21 +845,32 @@ class ResolvedorProductos:
         )
 
     def resolver(
-        self, interpretacion: InterpretacionResuelta, mensajes: Sequence[str] | None = None
+        self,
+        interpretacion: InterpretacionResuelta,
+        mensajes: Sequence[str] | None = None,
+        cliente_id: str | None = None,
     ) -> InterpretacionResuelta:
         """Aplica `resolver_mencion` a cada mención y, si se dan los mensajes, el anclaje al
-        texto literal, el anclaje de cantidades, la verificación de unidades y la detección de
-        correcciones."""
+        texto literal, las variantes no vendidas, el anclaje de cantidades, la verificación de
+        unidades, las cantidades no enteras y la detección de correcciones. Con `cliente_id` y
+        "lo de siempre", los productos de su último pedido entregado cuentan como ya pedidos
+        para detectar correcciones ("lo de siempre pero de kola 600 que sean 5")."""
         menciones = [self.resolver_mencion(m) for m in interpretacion.menciones]
         if mensajes is not None:
             menciones = [self.anclar_al_mensaje(m, mensajes) for m in menciones]
+            menciones = [self.variantes_no_vendidas(m) for m in menciones]
             textos = [m.texto for m in menciones]
             menciones = [self.desambiguar_por_contexto(m, mensajes, textos) for m in menciones]
             menciones = anclar_cantidades(menciones, mensajes)
             menciones = verificar_unidades(menciones, mensajes)
             menciones = docenas_de_empaques(menciones, mensajes)
             menciones = self.medias_unidades(menciones, mensajes)
-            menciones = detectar_correcciones(menciones, mensajes)
+            menciones = self.cantidades_no_enteras(menciones, mensajes)
+            previos: list[str] = []
+            if interpretacion.lo_de_siempre and cliente_id:
+                pedido = self.datos.ultimo_pedido_entregado(cliente_id)
+                previos = [linea.sku for linea in pedido.lineas] if pedido else []
+            menciones = detectar_correcciones(menciones, mensajes, previos)
         menciones = referencias_a_lo_pedido(menciones)
         return interpretacion.model_copy(update={"menciones": menciones})
 
@@ -661,12 +880,20 @@ _MARCAS_CORRECCION = re.compile(
 )
 
 
-def detectar_correcciones(menciones: Sequence[Mencion], mensajes: Sequence[str]) -> list[Mencion]:
+#: Marca de corrección **justo después** del producto ("de kola 600 que sean 5").
+_MARCAS_CORRECCION_DESPUES = re.compile(r"^\W*(?:que sean|que sea|mejor|serian|en vez)\b")
+
+
+def detectar_correcciones(
+    menciones: Sequence[Mencion], mensajes: Sequence[str], previos: Sequence[str] = ()
+) -> list[Mencion]:
     """Una mención `agregar` de un sku **ya pedido** que en la conversación va precedida (a
-    menos de 40 caracteres) por una marca de corrección ("Mejor 6 fardos de sal pacifico")
-    es una corrección que el modelo no marcó: pasa a `corregir`. Sin marca, se suma (§2)."""
+    menos de 40 caracteres) por una marca de corrección ("Mejor 6 fardos de sal pacifico") o
+    seguida de una ("de kola 600 que sean 5") es una corrección que el modelo no marcó: pasa a
+    `corregir`. Sin marca, se suma (§2). `previos`: skus ya pedidos antes de la conversación
+    (las líneas de "lo de siempre", D50)."""
     texto = normalizar(" ".join(mensajes))
-    vistos: set[str] = set()
+    vistos: set[str] = set(previos)
     resultado = []
     for m in menciones:
         if m.resolucion == Resolucion.SKU and m.sku:
@@ -674,10 +901,14 @@ def detectar_correcciones(menciones: Sequence[Mencion], mensajes: Sequence[str])
                 inicio = normalizar(m.texto).split()[:2]
                 if inicio:
                     patron = r"\s+".join(map(re.escape, inicio))
-                    posiciones = [x.start() for x in re.finditer(patron, texto)]
-                    if posiciones:
-                        ventana = texto[max(0, posiciones[-1] - 40) : posiciones[-1]]
-                        if _MARCAS_CORRECCION.search(ventana):
+                    ocurrencias = list(re.finditer(patron, texto))
+                    if ocurrencias:
+                        ultima = ocurrencias[-1]
+                        antes = texto[max(0, ultima.start() - 40) : ultima.start()]
+                        despues = texto[ultima.end() : ultima.end() + 25]
+                        if _MARCAS_CORRECCION.search(antes) or _MARCAS_CORRECCION_DESPUES.search(
+                            despues
+                        ):
                             m = m.model_copy(update={"accion": Accion.CORREGIR})
             vistos.add(m.sku)
         resultado.append(m)

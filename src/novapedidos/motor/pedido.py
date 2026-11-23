@@ -91,6 +91,8 @@ def convertir_a_unidades_de_venta(cantidad: int, unidad: Unidad, producto: Produ
     `venta` se toma tal cual; `unidad_suelta` y `docena` se dividen entre
     `unidades_por_empaque` **solo si la división es exacta** (si no, `None`: no se redondea).
     """
+    if unidad is Unidad.NO_CONVERTIBLE:
+        return None
     if unidad is Unidad.VENTA:
         return cantidad
     unidades = cantidad * 12 if unidad is Unidad.DOCENA else cantidad
@@ -340,7 +342,9 @@ def _motivos(pendientes: list[Pendiente], excedido: bool) -> list[MotivoRevision
 # ---------------------------------------------------------------------------
 
 
-def _fuera_de_alcance(cliente_id: str, fecha_hora: datetime, datos: Datos) -> RespuestaPedido:
+def _fuera_de_alcance(
+    cliente_id: str, fecha_hora: datetime, datos: Datos, *, pedido_vacio: bool = False
+) -> RespuestaPedido:
     respuesta = RespuestaPedido(
         cliente_id=cliente_id,
         estado=EstadoPedido.FUERA_DE_ALCANCE,
@@ -348,9 +352,8 @@ def _fuera_de_alcance(cliente_id: str, fecha_hora: datetime, datos: Datos) -> Re
         fecha_entrega=None,
         mensaje_cliente="",
     )
-    return respuesta.model_copy(
-        update={"mensaje_cliente": redactar_mensaje(respuesta, fecha_hora, datos)}
-    )
+    mensaje = redactar_mensaje(respuesta, fecha_hora, datos, pedido_vacio=pedido_vacio)
+    return respuesta.model_copy(update={"mensaje_cliente": mensaje})
 
 
 def armar_pedido(
@@ -382,7 +385,7 @@ def armar_pedido(
     cantidades, sustituciones, pendientes = _entregar(acumulador.entradas, datos)
     if not cantidades and not pendientes:
         # D19: es pedido pero no quedó nada (todo quitado o cantidades 0) → fuera de alcance.
-        return _fuera_de_alcance(cliente_id, fecha_hora, datos)
+        return _fuera_de_alcance(cliente_id, fecha_hora, datos, pedido_vacio=True)
 
     calculadas = [
         calcular_linea(datos.productos[sku], cantidad, datos.escalas)

@@ -9,6 +9,7 @@ reproducir cada resultado: [`README.md`](../README.md) §5.
 | Ruta | Qué es |
 |---|---|
 | [`checklist_entrega.md`](checklist_entrega.md) | Revisión requisito por requisito contra el enunciado y el Anexo, con dónde se cumple. |
+| [`qa_evaluador/`](qa_evaluador/README.md) | QA de caja negra como el evaluador: hallazgos, correcciones (D50) y re-evaluación en Docker por HTTP, **185/185**. |
 | [`evaluacion_final/`](evaluacion_final/) | Evaluación final: stack de Docker Compose, **por HTTP**, 177 casos, `--concurrencia 4`, registrada en MLflow. |
 | [`comparacion/`](comparacion/comparacion.md) | Comparación de 6 modelos y 2 arquitecturas en calidad, latencia y costo (respalda D49). |
 | [`mlflow/`](mlflow/) | Capturas de MLflow (trazas y evaluación) con el modelo entregado. |

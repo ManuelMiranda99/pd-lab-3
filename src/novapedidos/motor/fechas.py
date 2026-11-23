@@ -18,6 +18,10 @@ FORMATO_FECHA_HORA = "%Y-%m-%dT%H:%M"
 HORA_CORTE = time(14, 0)
 
 _PATRON_FECHA_HORA = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}")
+#: Años aceptados en `fecha_hora` (D50): fuera de este rango la fecha es un error de la
+#: solicitud (422), no un pedido; además evita desbordar `date` al sumar días (9999-12-31).
+ANIO_MINIMO = 2000
+ANIO_MAXIMO = 2099
 
 
 class ErrorFechaHora(ValueError):
@@ -33,11 +37,16 @@ def parsear_fecha_hora(texto: str) -> datetime:
             f"{texto!r}"
         )
     try:
-        return datetime.strptime(texto, FORMATO_FECHA_HORA)
+        valor = datetime.strptime(texto, FORMATO_FECHA_HORA)
     except ValueError as exc:
         raise ErrorFechaHora(
             f"fecha_hora no es una fecha y hora válidas (formato AAAA-MM-DDTHH:MM): {texto!r}"
         ) from exc
+    if not ANIO_MINIMO <= valor.year <= ANIO_MAXIMO:
+        raise ErrorFechaHora(
+            f"fecha_hora está fuera de rango (año entre {ANIO_MINIMO} y {ANIO_MAXIMO}): {texto!r}"
+        )
+    return valor
 
 
 def fecha_efectiva_recepcion(fecha_hora: datetime) -> date:

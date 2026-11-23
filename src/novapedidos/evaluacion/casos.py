@@ -65,6 +65,7 @@ def cargar_casos(rutas: Iterable[Path | str]) -> list[dict[str, Any]]:
 
 SUELTA = Unidad.UNIDAD_SUELTA
 DOCENA = Unidad.DOCENA
+NO_CONVERTIBLE = Unidad.NO_CONVERTIBLE
 CORREGIR = Accion.CORREGIR
 QUITAR = Accion.QUITAR
 

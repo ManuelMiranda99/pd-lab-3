@@ -245,7 +245,9 @@ class InterpreteLLM:
                 with tramo(
                     "resolucion_productos", "PARSER", lambda: previa.model_dump(mode="json")
                 ) as t:
-                    interpretacion = componentes.resolvedor.resolver(interpretacion, mensajes)
+                    interpretacion = componentes.resolvedor.resolver(
+                        interpretacion, mensajes, cliente_id
+                    )
                     if t is not None:
                         t.salidas(interpretacion.model_dump(mode="json"))
         except Exception as exc:  # noqa: BLE001

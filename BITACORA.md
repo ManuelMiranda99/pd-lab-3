@@ -418,3 +418,32 @@
 
 ### Próxima sesión
 - F11.5 (con permiso): push de ramas, PR a `main`, merge, tag `entrega-lab3`, repo público, enlace en el GES.
+
+---
+
+## Sesión 2026-11-23 — QA como evaluador y correcciones
+**Fase:** 11 — Documentación y entrega (verificación previa a F11.5)
+**Estado al cerrar:** correcciones hechas y verificadas; sin commit (pendiente de permiso)
+
+### Logrado
+- QA de caja negra siguiendo solo el README y la sección "Evaluación del Funcionamiento" del PDF: clon limpio, Docker Compose y ~120 solicitudes (no publicadas, inválidas, carga, MLflow caído).
+- Correcciones en código (D50): cantidades no enteras y medidas → `cantidad_no_convertible`; diminutivos de sueltas; corrección sobre "lo de siempre"; variantes no vendidas → `producto_no_existe`; código de producto en el mensaje; año 2000–2099; `cliente_id` sin mayúsculas; `/health` sin caché del `ok` y `trazas: en espera`; timeout 8 s; mensaje de pedido vacío.
+- Casos propios P056–P063 y 22 pruebas nuevas; README (validación y casos de borde), DECISIONES D50, `evidencia/qa_evaluador/`.
+
+### Verificación
+- pytest 487 · ruff ok.
+- Evaluación en proceso: 177/177; en Docker por HTTP: 185/185, p95 1.03 s, 0 errores.
+- QA repetido en Docker: 56/56 casos, inválidas sin 5xx, resiliencia (stop/pause) con `/health` degradado desde la primera consulta.
+
+### Lo que falló
+- Un ajuste del prompt hizo fallar P008 de forma estable · se revirtió; todo quedó en código.
+- Falsa alarma de `/health` con MLflow pausado: en zsh `$P` no se separa en palabras y el `pause` no se ejecutó.
+
+### Capturas
+- evidencia/qa_evaluador/ (reporte y resumen de la re-evaluación).
+
+### Decisiones tomadas
+- D50 (y ajustes en D24 y D30).
+
+### Próxima sesión
+- F11.5 (con permiso): commit de estas correcciones, push de ramas, PR a `main`, merge, tag `entrega-lab3`, repo público, enlace en el GES.

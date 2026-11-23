@@ -693,3 +693,32 @@ def test_monitor_mlflow_respeta_el_timeout():
         assert not estado.disponible
     finally:
         servidor.close()
+
+
+# --------------------------------------------------------------------------- QA del evaluador (D50)
+
+
+def test_cliente_id_sin_distinguir_mayusculas(cliente):
+    r = cliente.post(URL, json={**SOLICITUD_ANEXO, "cliente_id": "c001"})
+    assert r.status_code == 200
+    assert r.json()["cliente_id"] == "C001"
+
+
+@pytest.mark.parametrize("fecha_hora", ["9999-12-31T15:00", "0001-01-01T10:00", "1999-12-31T23:59"])
+def test_fecha_hora_fuera_de_rango_422_no_503(cliente, fecha_hora):
+    r = cliente.post(URL, json={**SOLICITUD_ANEXO, "fecha_hora": fecha_hora})
+    assert r.status_code == 422
+    cuerpo = r.json()
+    assert "fuera de rango" in cuerpo["mensaje"]
+    assert [d["campo"] for d in cuerpo["detalles"]] == ["fecha_hora"]
+
+
+def test_monitor_mlflow_no_guarda_en_cache_un_ok():
+    """Una caída se ve en la siguiente consulta: el "ok" no se guarda en caché."""
+    reloj = [0.0]
+    monitor = MonitorMlflow("http://mlflow:5000", ttl=5.0, reloj=lambda: reloj[0])
+    respuestas = [EstadoDependencia(True, "ok"), EstadoDependencia(False, "caído")]
+    monitor._consultar = lambda: respuestas.pop(0)
+    assert monitor.estado().disponible
+    reloj[0] = 0.1
+    assert not monitor.estado().disponible
