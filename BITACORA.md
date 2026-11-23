@@ -101,3 +101,32 @@
 
 ### Próxima sesión
 - Fase 2 (motor de cálculos). Casos sin cobertura dev para Fase 7: `cantidad_no_convertible`, 14:00 exacto, crédito justo en el límite, varios motivos, menciones repetidas, cliente sin pedidos entregados.
+
+---
+
+## Sesión 2026-11-22 — Fase 2 (inicio)
+**Fase:** 2 — Motor de reglas: cálculos
+**Estado al cerrar:** Fase 2 cerrada ✅ (subagente; verificada por la sesión principal)
+
+### Logrado
+- F2.1 `motor/precios.py`: `descuento_pct`, `subtotal` (Decimal HALF_UP), `calcular_linea` → `LineaCalculada`, `total`.
+- F2.2 `motor/fechas.py`: `parsear_fecha_hora` estricto (`ErrorFechaHora`), `fecha_efectiva_recepcion` (corte 14:00), `fecha_entrega` (visita estrictamente posterior).
+- F2.3 `motor/credito.py`: `credito_excedido` (`>` estricto).
+- F2.4 `tests/test_motor_calculos.py`: 59 pruebas de bordes (14:00 exacto, ruta solo sábado, fin de año, redondeo .005, crédito en el límite, 13 formatos inválidos).
+- F2.5 `tests/test_regresion_dev.py`: 84/84 casos dev (precio, descuento, subtotal, total, fecha, crédito).
+
+### Verificación
+- pytest: 175 pasan (sin `datos/`: 87 pasan, 88 se saltan, como en CI) · ruff check/format: ok.
+
+### Lo que falló
+- Rojo esperado de TDD (`ModuleNotFoundError` antes de escribir el código) · resuelto.
+- Un archivo sin formato · resuelto con `ruff format`.
+
+### Capturas
+- No aplica (código puro; evidencia = salida de pytest).
+
+### Decisiones tomadas
+- D14: motor con `Decimal`; conversión a número JSON solo en la API; `ErrorFechaHora` → 422.
+
+### Próxima sesión
+- Fase 3 (armado del pedido).

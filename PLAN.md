@@ -106,11 +106,11 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** precio, descuento, subtotal, total, crédito y fecha de entrega exactos.
 **Requisito PDF:** §1 ("cálculos con código probado"), políticas §5, §6, §7.
 
-- [ ] F2.1 `motor/precios.py`: descuento por escala (mayor % alcanzado), subtotal con redondeo mitad-arriba (`Decimal`), total.
-- [ ] F2.2 `motor/fechas.py`: corte 14:00 → día siguiente; primera visita **posterior** a la fecha de recepción.
-- [ ] F2.3 `motor/credito.py`: `saldo_pendiente + total > limite_credito` → `credito_excedido`.
-- [ ] F2.4 Tests unitarios con casos borde (14:00 exacto, sábado, mínimo de escala exacto, redondeo .005).
-- [ ] F2.5 Test de regresión: para **todos** los casos de `mensajes_dev.jsonl`, recalcular total y fecha a partir de las líneas esperadas y comparar.
+- [x] F2.1 `motor/precios.py`: descuento por escala (mayor % alcanzado), subtotal con redondeo mitad-arriba (`Decimal`), total.
+- [x] F2.2 `motor/fechas.py`: corte 14:00 → día siguiente; primera visita **posterior** a la fecha de recepción.
+- [x] F2.3 `motor/credito.py`: `saldo_pendiente + total > limite_credito` → `credito_excedido`.
+- [x] F2.4 Tests unitarios con casos borde (14:00 exacto, sábado, mínimo de escala exacto, redondeo .005).
+- [x] F2.5 Test de regresión: para **todos** los casos de `mensajes_dev.jsonl`, recalcular total y fecha a partir de las líneas esperadas y comparar.
 
 **Verificación manual:** `uv run pytest tests/test_motor_calculos.py -v` todo verde; revisar 2–3 casos borde a mano con `politicas.md`.
 

@@ -24,6 +24,7 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D11 | Orden de pendientes y motivos | Orden de aparición; `credito_excedido` al final; sin duplicados |
 | D12 | Crédito junto a pendientes | Se evalúan ambos; el crédito usa el total de las líneas calculadas |
 | D13 | Datos: carga y validación | Carga única por proceso, estructuras inmutables, validación estricta con `ErrorDatos` |
+| D14 | Tipos del motor de cálculos | `Decimal` en todo el motor (`LineaCalculada` congelada); a `float` de 2 decimales solo al serializar en la API; `fecha_hora` con parser estricto |
 
 ---
 
@@ -233,6 +234,29 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
   dependencia).
 - **Justificación / evidencia.** `tests/test_datos.py` (pruebas sintéticas que corren siempre y
   pruebas con datos reales que se saltan sin `datos/`).
+
+
+## D14 · Tipos del motor de cálculos y parser de `fecha_hora`
+
+- **Contexto.** La Fase 3 (armado del pedido) y la API consumen el motor; hay que fijar qué tipos
+  entran y salen y cómo se valida `fecha_hora`.
+- **Decisión.**
+  1. `motor.precios` trabaja y devuelve `Decimal` (precio, subtotal, total con exactamente 2
+     decimales; `total([])` = `0.00`). `calcular_linea` devuelve `LineaCalculada`, dataclass
+     congelada con `sku, cantidad, precio_unitario, descuento_pct, subtotal`. Las entradas
+     `float` se aceptan pero se convierten con `Decimal(str(x))`. La conversión a número JSON
+     (2 decimales) se hace **solo** en la capa de la API/esquema de respuesta.
+  2. Cantidades no positivas o no enteras y descuentos fuera de `[0, 100)` lanzan `ValueError`
+     (son errores de programación: la Fase 3 debe filtrar antes).
+  3. `parsear_fecha_hora` acepta exactamente `AAAA-MM-DDTHH:MM` (regex + `strptime`): rechaza
+     segundos, zona, espacios, un solo dígito y fechas imposibles con `ErrorFechaHora`
+     (subclase de `ValueError`, mensaje con el formato esperado) para que la API responda 422.
+  4. `fecha_entrega` valida `dias_visita` no vacío y en 0–6 (`ValueError`).
+- **Alternativas.** Devolver `float` desde el motor (reintroduce el error binario); usar
+  `datetime.fromisoformat` (acepta segundos, zona y otras variantes).
+- **Justificación / evidencia.** `tests/test_motor_calculos.py` (59 pruebas sintéticas) y
+  `tests/test_regresion_dev.py` (84/84 casos dev: precio, descuento, subtotal, total, fecha de
+  entrega y crédito).
 
 ---
 
