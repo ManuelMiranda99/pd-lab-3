@@ -23,7 +23,12 @@ from novapedidos.api.interpretes import crear_interprete
 from novapedidos.api.main import crear_app, obtener_interprete, obtener_proveedor_datos
 from novapedidos.config import Configuracion
 from novapedidos.datos import construir_datos
-from novapedidos.llm.cliente import ENCABEZADOS_OPENROUTER, crear_modelo_chat, extraer_metadatos
+from novapedidos.llm.cliente import (
+    ENCABEZADOS_OPENROUTER,
+    crear_modelo_chat,
+    extraer_metadatos,
+    parametro_razonamiento,
+)
 from novapedidos.llm.esquema import a_interpretacion, construir_esquema
 from novapedidos.llm.interfaz import ErrorInterprete, Interprete
 from novapedidos.llm.interprete import InterpreteLLM, crear_interprete_llm
@@ -218,6 +223,27 @@ def _interprete(datos, servidor: ServidorFalso, **kw: Any) -> InterpreteLLM:
         nombre_modelo=config.openrouter_model,
         **kw,
     )
+
+
+# --------------------------------------------------------------------------- cliente
+
+
+def test_parametro_razonamiento_traduce_la_configuracion():
+    assert parametro_razonamiento("") is None
+    assert parametro_razonamiento(None) is None
+    assert parametro_razonamiento("raro") is None
+    assert parametro_razonamiento("no") == {"enabled": False}
+    assert parametro_razonamiento(" Low ") == {"effort": "low"}
+
+
+def test_crear_modelo_chat_envia_razonamiento_solo_si_se_configura():
+    sin = crear_modelo_chat(_config())
+    assert "reasoning" not in (sin.extra_body or {})
+    assert sin.extra_body["usage"] == {"include": True}
+    con = crear_modelo_chat(_config(openrouter_razonamiento="no"))
+    assert con.extra_body["reasoning"] == {"enabled": False}
+    forzado = crear_modelo_chat(_config(openrouter_razonamiento="no"), razonamiento="")
+    assert "reasoning" not in (forzado.extra_body or {})
 
 
 # --------------------------------------------------------------------------- esquema
@@ -570,6 +596,47 @@ def test_desambiguar_por_contexto(datos):
     kola1 = _mn("kola", cantidad=600, opciones=["B01", "B02"])
     (m,) = r.resolver(
         InterpretacionResuelta(es_pedido=True, menciones=[kola1]), ["kola 600"]
+    ).menciones
+    assert m.resolucion == Resolucion.AMBIGUO
+
+
+def test_desambiguar_por_contexto_ignora_el_texto_de_otra_mencion(datos):
+    """ "2 de cafe 400 y 1 de cafe altura instantaneo": el segundo "cafe" es parte de otra
+    mención, así que "400" decide la primera (A12). Caso real: "dos quintales de arroz y un
+    fardo de arroz ceiba de libra" (P029, D49)."""
+    r = ResolvedorProductos(datos)
+    cafe = _mn("cafe", cantidad=2, opciones=["A12", "A13"])
+    otro = _mn("cafe altura instantaneo", "A13", 1)
+    m, segunda = r.resolver(
+        InterpretacionResuelta(es_pedido=True, menciones=[cafe, otro]),
+        ["2 de cafe 400 y 1 de cafe altura instantaneo"],
+    ).menciones
+    assert (m.resolucion, m.sku) == (Resolucion.SKU, "A12")
+    assert segunda.sku == "A13"
+    # si la otra mención no contiene el texto, las dos apariciones siguen contando
+    m, _ = r.resolver(
+        InterpretacionResuelta(
+            es_pedido=True, menciones=[cafe, _mn("detergente espumoso", "L01", 1)]
+        ),
+        ["2 de cafe 400 y 1 de cafe instantaneo y detergente espumoso"],
+    ).menciones
+    assert m.resolucion == Resolucion.AMBIGUO
+
+
+def test_correccion_ambigua_se_refiere_a_lo_ya_pedido(datos):
+    r = ResolvedorProductos(datos)
+    kola600 = _mn("kola 600", "B01", 10)
+    kola = _mn("kola", cantidad=9, opciones=["B01", "B02"], accion=Accion.CORREGIR)
+    mensajes = ["me manda 10 fardos de kola 600", "perdón, de kola que sean 9"]
+    _, m = r.resolver(
+        InterpretacionResuelta(es_pedido=True, menciones=[kola600, kola]), mensajes
+    ).menciones
+    assert (m.resolucion, m.sku, m.accion) == (Resolucion.SKU, "B01", Accion.CORREGIR)
+    # un agregar ambiguo no se toca (la política pide preguntar)
+    nueva = _mn("kola", cantidad=9, opciones=["B01", "B02"])
+    _, m = r.resolver(
+        InterpretacionResuelta(es_pedido=True, menciones=[kola600, nueva]),
+        ["me manda 10 fardos de kola 600", "y 9 de kola"],
     ).menciones
     assert m.resolucion == Resolucion.AMBIGUO
 

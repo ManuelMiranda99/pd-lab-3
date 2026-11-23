@@ -9,8 +9,8 @@ Precios en USD por millón de tokens.
 
 | Modelo | Entrada | Salida | `structured_outputs` | Razonamiento | Notas |
 |---|---:|---:|:---:|:---:|---|
-| **`openai/gpt-4.1-nano`** (elegido) | 0.10 | 0.40 | sí | no | Rápido, sin razonamiento (baja latencia), JSON Schema estricto, proveedor estable. Contexto 1M. |
-| `google/gemini-2.5-flash-lite` | 0.10 | 0.40 | sí | opcional | Muy rápido; alternativa de otro proveedor con el mismo precio. |
+| **`openai/gpt-4.1-nano`** (desarrollo, D01) | 0.10 | 0.40 | sí | no | Rápido, sin razonamiento (baja latencia), JSON Schema estricto, proveedor estable. Contexto 1M. |
+| **`google/gemini-2.5-flash-lite`** (entregado, D49) | 0.10 | 0.40 | sí | opcional | Muy rápido; alternativa de otro proveedor con el mismo precio. |
 | `mistralai/mistral-small-3.2-24b-instruct` | 0.075 | 0.20 | sí | no | El más barato de los estables; buen español. |
 | `openai/gpt-4o-mini` | 0.15 | 0.60 | sí | no | Reserva conocida y muy estable. |
 
@@ -32,3 +32,12 @@ Precios en USD por millón de tokens.
   debería bastar. La Fase 10 lo confirma comparando exactitud, latencia p95 y costo con los
   casos de `ejemplos/mensajes_dev.jsonl` y los casos propios.
 - Precios y disponibilidad cambian: re-consultar la lista antes de la Fase 10.
+
+## Resultado de la comparación (Fase 10, 2026-11-23)
+
+Precios re-consultados el 2026-11-23 (sin cambios para los candidatos). Se compararon nano,
+4.1-mini, 2.5-flash (sin razonar), 2.5-flash-lite, mistral-small-3.2 y claude-haiku-4.5, y nano
+sin la resolución en código, con los 177 casos de evaluación. **Elegido para la entrega:
+`google/gemini-2.5-flash-lite`** (177/177, p95 ≈ 1.1 s, USD 0.0002 por pedido). Tabla,
+gráficas y capturas de MLflow en [`comparacion/comparacion.md`](comparacion/comparacion.md);
+decisión en `DECISIONES.md` D49.

@@ -145,10 +145,10 @@ class InterpreteLLM:
         latencia = time.perf_counter() - inicio
         self._notificar(
             MetadatosLlamada(
-                modelo=self.nombre_modelo, latencia_s=latencia, error=type(exc).__name__
+                modelo=self.nombre_modelo, latencia_s=latencia, error=_nombre_error(exc)
             )
         )
-        logger.warning("Fallo al llamar al modelo: %s", type(exc).__name__)
+        logger.warning("Fallo al llamar al modelo: %s", _nombre_error(exc))
         if isinstance(exc, ValidationError | OutputParserException | json.JSONDecodeError):
             motivo = "el modelo devolvió una respuesta que no cumple el esquema"
         else:
@@ -262,6 +262,12 @@ class InterpreteLLM:
     ) -> InterpretacionResuelta:
         interpretacion, _ = self.interpretar_con_metadatos(cliente_id, mensajes, fecha_hora)
         return interpretacion
+
+
+def _nombre_error(exc: Exception) -> str:
+    """Tipo de la excepción y, si es un error HTTP del proveedor, su código (p. ej. 429)."""
+    codigo = getattr(exc, "status_code", None)
+    return f"{type(exc).__name__}({codigo})" if codigo else type(exc).__name__
 
 
 def _anotar_metadatos(t: Any, metadatos: MetadatosLlamada) -> None:

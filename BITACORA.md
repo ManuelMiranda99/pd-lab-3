@@ -353,3 +353,34 @@
 
 ### Próxima sesión
 - Fase 10: comparar modelos; Fase 11: README completo y clon desde GitHub.
+
+---
+
+## Sesión 2026-11-23 — Fase 10 (inicio)
+**Fase:** 10 — Comparación de alternativas
+**Estado al cerrar:** Fase 10 cerrada ✅ (subagente; verificada por la sesión principal)
+
+### Logrado
+- F10.1 7 alternativas: gpt-4.1-nano, gpt-4.1-mini, gemini-2.5-flash, gemini-2.5-flash-lite, mistral-small-3.2, claude-haiku-4.5 y nano sin resolución en código.
+- F10.2 177 casos por alternativa, 2 repeticiones (haiku 1), registradas en MLflow `novapedidos-comparacion`; latencia uno a uno de finalistas.
+- F10.3 `evidencia/comparacion/` (comparacion.md/csv, 3 gráficas, capturas de MLflow), `scripts/comparar_alternativas.py`.
+- F10.4 Elegido **google/gemini-2.5-flash-lite** (.env.example, config, .env); ajuste general de resolución (D49); parámetro `OPENROUTER_RAZONAMIENTO`.
+
+### Verificación
+- pytest 465 · ruff ok.
+- flash-lite + D49: 177/177 en 2 repeticiones, p95 ~1.1 s, USD 0.0002 por pedido. Nano sin resolución: 74 % (aporte de la capa determinista).
+- Sesión principal con flash-lite: control + propios 69/69, p95 1.05 s, integridad 100 %.
+
+### Lo que falló
+- 6 modelos en paralelo → 429/errores de OpenRouter en 6 corridas · marcadas inválidas y repetidas (USD 1.44 desperdiciados).
+- Haiku con 1 sola repetición por presupuesto. Gasto de la fase USD 3.12.
+- Saldo de OpenRouter restante ≈ USD 1.3 (según el subagente).
+
+### Capturas
+- evidencia/comparacion/exactitud_vs_costo.png, exactitud_vs_p95.png, exactitud_por_tipo_finalistas.png, mlflow_runs_comparacion.png, mlflow_compare_runs.png.
+
+### Decisiones tomadas
+- D49: elección del modelo (D01 superada) y ajuste de resolución.
+
+### Próxima sesión
+- Fase 11: README completo, evidencia final con flash-lite en Docker, clon limpio, tag (con permiso).

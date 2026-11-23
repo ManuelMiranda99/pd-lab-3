@@ -54,10 +54,29 @@ class MetadatosLlamada:
         return asdict(self)
 
 
+#: Valores válidos de `OPENROUTER_RAZONAMIENTO` además de vacío (el del proveedor).
+ESFUERZOS_RAZONAMIENTO = ("minimal", "low", "medium", "high")
+
+
+def parametro_razonamiento(valor: str | None) -> dict[str, Any] | None:
+    """Traduce `OPENROUTER_RAZONAMIENTO` al parámetro `reasoning` de OpenRouter.
+
+    Vacío → `None` (no se envía: decide el proveedor); `no` → `{"enabled": False}`; un
+    esfuerzo → `{"effort": …}`. Un valor desconocido se ignora (no rompe la API).
+    """
+    limpio = (valor or "").strip().lower()
+    if limpio in ("no", "off", "false", "0", "ninguno"):
+        return {"enabled": False}
+    if limpio in ESFUERZOS_RAZONAMIENTO:
+        return {"effort": limpio}
+    return None
+
+
 def crear_modelo_chat(
     config: Configuracion,
     *,
     modelo: str | None = None,
+    razonamiento: str | None = None,
     timeout: float = TIMEOUT_S,
     max_reintentos: int = MAX_REINTENTOS,
     http_client: httpx.Client | None = None,
@@ -65,7 +84,14 @@ def crear_modelo_chat(
     """`ChatOpenAI` apuntando a OpenRouter con los parámetros del servicio.
 
     `http_client` permite inyectar un transporte falso en las pruebas (sin red ni modelo).
+    `razonamiento` reemplaza a `config.openrouter_razonamiento` (comparación de la Fase 10).
     """
+    extra_body: dict[str, Any] = {"usage": {"include": True}}
+    reasoning = parametro_razonamiento(
+        config.openrouter_razonamiento if razonamiento is None else razonamiento
+    )
+    if reasoning is not None:
+        extra_body["reasoning"] = reasoning
     return ChatOpenAI(
         model=modelo or config.openrouter_model,
         base_url=config.openrouter_base_url,
@@ -74,7 +100,7 @@ def crear_modelo_chat(
         timeout=timeout,
         max_retries=max_reintentos,
         default_headers=ENCABEZADOS_OPENROUTER,
-        extra_body={"usage": {"include": True}},
+        extra_body=extra_body,
         http_client=http_client,
     )
 
@@ -110,9 +136,11 @@ def extraer_metadatos(crudo: Any, latencia_s: float, modelo: str) -> MetadatosLl
 
 __all__ = [
     "ENCABEZADOS_OPENROUTER",
+    "ESFUERZOS_RAZONAMIENTO",
     "MAX_REINTENTOS",
     "TIMEOUT_S",
     "MetadatosLlamada",
     "crear_modelo_chat",
     "extraer_metadatos",
+    "parametro_razonamiento",
 ]

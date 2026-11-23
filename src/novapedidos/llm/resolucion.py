@@ -420,18 +420,26 @@ class ResolvedorProductos:
             if all(formas(p) & vocab for p in buscadas)
         )
 
-    def desambiguar_por_contexto(self, m: Mencion, mensajes: Sequence[str]) -> Mencion:
+    def desambiguar_por_contexto(
+        self, m: Mencion, mensajes: Sequence[str], otros_textos: Sequence[str] = ()
+    ) -> Mencion:
         """Un `ambiguo` cuyo texto en el mensaje va **inmediatamente** seguido o precedido de una
         palabra o número que solo tiene una de las opciones ("papel suave 4: 3" → L04, "un
         quintal de arroz" → A02) se resuelve a esa opción (D37). El número que es la cantidad
         de la mención no cuenta ("cocas 3", "2 de frijol"). Solo si el texto aparece una sola
-        vez en la conversación."""
+        vez en la conversación, sin contar las apariciones dentro del texto **más largo** de
+        otra mención ("dos quintales de arroz y un fardo de arroz ceiba de libra": el segundo
+        "arroz" es de "arroz ceiba de libra"; D49)."""
         if m.resolucion != Resolucion.AMBIGUO or len(m.opciones) < 2:
             return m
         inicio = [p for p in normalizar(m.texto).split() if p in palabras(m.texto)]
         if not inicio:
             return m
         texto = normalizar_suave(" ".join(mensajes))
+        propio = normalizar_suave(m.texto)
+        for otro in sorted({normalizar_suave(o) for o in otros_textos}, key=len, reverse=True):
+            if otro != propio and len(otro) > len(propio) and propio in otro:
+                texto = re.sub(r"\b" + re.escape(otro) + r"\b", " | ", texto)
         nombre = r" +".join(map(re.escape, inicio))
         if len(re.findall(r"\b" + nombre + r"\b", texto)) != 1:
             return m  # el texto aparece varias veces ("pasta: 2 … pasta dental"): no se adivina
@@ -637,12 +645,14 @@ class ResolvedorProductos:
         menciones = [self.resolver_mencion(m) for m in interpretacion.menciones]
         if mensajes is not None:
             menciones = [self.anclar_al_mensaje(m, mensajes) for m in menciones]
-            menciones = [self.desambiguar_por_contexto(m, mensajes) for m in menciones]
+            textos = [m.texto for m in menciones]
+            menciones = [self.desambiguar_por_contexto(m, mensajes, textos) for m in menciones]
             menciones = anclar_cantidades(menciones, mensajes)
             menciones = verificar_unidades(menciones, mensajes)
             menciones = docenas_de_empaques(menciones, mensajes)
             menciones = self.medias_unidades(menciones, mensajes)
             menciones = detectar_correcciones(menciones, mensajes)
+        menciones = referencias_a_lo_pedido(menciones)
         return interpretacion.model_copy(update={"menciones": menciones})
 
 
@@ -674,6 +684,29 @@ def detectar_correcciones(menciones: Sequence[Mencion], mensajes: Sequence[str])
     return resultado
 
 
+def referencias_a_lo_pedido(menciones: Sequence[Mencion]) -> list[Mencion]:
+    """Una corrección o un quitar `ambiguo` ("perdón, de kola que sean 9") se refiere a algo
+    que ya está en el pedido: si **exactamente una** de sus opciones ya se pidió antes en la
+    conversación, es ese sku (D49). Si ninguna o varias, queda `ambiguo`."""
+    pedidos: list[str] = []
+    resultado = []
+    for m in menciones:
+        if (
+            m.accion in (Accion.CORREGIR, Accion.QUITAR)
+            and m.resolucion == Resolucion.AMBIGUO
+            and m.opciones
+        ):
+            previas = {o for o in m.opciones if o in pedidos}
+            if len(previas) == 1:
+                m = m.model_copy(
+                    update={"resolucion": Resolucion.SKU, "sku": previas.pop(), "opciones": []}
+                )
+        if m.resolucion == Resolucion.SKU and m.sku:
+            pedidos.append(m.sku)
+        resultado.append(m)
+    return resultado
+
+
 __all__ = [
     "MARGEN_DIFUSO",
     "NUMEROS_EN_LETRAS",
@@ -685,6 +718,7 @@ __all__ = [
     "ResolvedorProductos",
     "normalizar",
     "detectar_correcciones",
+    "referencias_a_lo_pedido",
     "formas",
     "palabras",
     "sin_tildes",

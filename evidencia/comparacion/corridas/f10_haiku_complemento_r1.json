@@ -1,0 +1,208 @@
+{
+  "descripcion": "local · modelo anthropic/claude-haiku-4.5 · resolución post-LLM sí · razonamiento proveedor",
+  "casos": 50,
+  "etiquetados": 50,
+  "exactos": 49,
+  "exactitud": 0.98,
+  "errores": 0,
+  "por_tipo": {
+    "agotado": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "ambiguo": {
+      "n": 3,
+      "exactos": 3,
+      "exactitud": 1.0
+    },
+    "audio": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "borde_regla": {
+      "n": 4,
+      "exactos": 4,
+      "exactitud": 1.0
+    },
+    "correccion": {
+      "n": 1,
+      "exactos": 1,
+      "exactitud": 1.0
+    },
+    "credito": {
+      "n": 3,
+      "exactos": 3,
+      "exactitud": 1.0
+    },
+    "fuera_catalogo": {
+      "n": 8,
+      "exactos": 8,
+      "exactitud": 1.0
+    },
+    "fuera_de_alcance": {
+      "n": 3,
+      "exactos": 3,
+      "exactitud": 1.0
+    },
+    "habitual": {
+      "n": 4,
+      "exactos": 4,
+      "exactitud": 1.0
+    },
+    "inyeccion": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "manipulacion": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "no_existe": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "simple": {
+      "n": 2,
+      "exactos": 1,
+      "exactitud": 0.5
+    },
+    "sin_cantidad": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "unidades": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "varios_mensajes": {
+      "n": 3,
+      "exactos": 3,
+      "exactitud": 1.0
+    }
+  },
+  "por_origen": {
+    "casos_control.jsonl": {
+      "n": 5,
+      "exactos": 5,
+      "exactitud": 1.0
+    },
+    "casos_propios.jsonl": {
+      "n": 40,
+      "exactos": 39,
+      "exactitud": 0.975
+    },
+    "casos_variantes.jsonl": {
+      "n": 5,
+      "exactos": 5,
+      "exactitud": 1.0
+    }
+  },
+  "por_calificador": {
+    "caso_exacto": {
+      "n": 50,
+      "aprobados": 49,
+      "tasa": 0.98
+    },
+    "estado": {
+      "n": 50,
+      "aprobados": 50,
+      "tasa": 1.0
+    },
+    "lineas": {
+      "n": 50,
+      "aprobados": 49,
+      "tasa": 0.98
+    },
+    "total": {
+      "n": 50,
+      "aprobados": 49,
+      "tasa": 0.98
+    },
+    "fecha_entrega": {
+      "n": 50,
+      "aprobados": 50,
+      "tasa": 1.0
+    },
+    "motivos_revision": {
+      "n": 50,
+      "aprobados": 49,
+      "tasa": 0.98
+    },
+    "pendientes": {
+      "n": 50,
+      "aprobados": 49,
+      "tasa": 0.98
+    },
+    "sustituciones": {
+      "n": 50,
+      "aprobados": 50,
+      "tasa": 1.0
+    },
+    "lineas_estricto": {
+      "n": 50,
+      "aprobados": 49,
+      "tasa": 0.98
+    },
+    "integridad_precios": {
+      "n": 50,
+      "aprobados": 50,
+      "tasa": 1.0
+    },
+    "mensaje_cliente": {
+      "n": 50,
+      "aprobados": 50,
+      "tasa": 1.0
+    },
+    "latencia": {
+      "n": 50,
+      "aprobados": 50,
+      "tasa": 1.0
+    }
+  },
+  "latencia_s": {
+    "n": 50,
+    "p50": 1.257,
+    "p95": 1.947,
+    "max": 3.888,
+    "media": 1.381
+  },
+  "latencia_llm_s": {
+    "n": 50,
+    "p50": 1.255,
+    "p95": 1.903,
+    "max": 3.792,
+    "media": 1.371
+  },
+  "tokens": {
+    "entrada": 394013,
+    "salida": 6974,
+    "cache": 0
+  },
+  "costo_usd": {
+    "total": 0.428883,
+    "por_caso": 0.008578,
+    "casos_con_costo": 50
+  },
+  "duracion_s": 17.8,
+  "fallos": [
+    "P029"
+  ],
+  "concurrencia": 4,
+  "umbral_latencia_s": 5.0,
+  "marca": "f10_haiku_complemento_r1",
+  "archivos": [
+    "ejemplos/mensajes_dev.jsonl",
+    "eval/casos_variantes.jsonl",
+    "eval/casos_control.jsonl",
+    "eval/casos_propios.jsonl"
+  ],
+  "modelo": "anthropic/claude-haiku-4.5",
+  "resolucion_post_llm": true
+}

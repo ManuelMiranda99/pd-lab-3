@@ -11,7 +11,7 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 
 | # | Tema | Decisión en una línea |
 |---|---|---|
-| D01 | Modelo de desarrollo | `openai/gpt-4.1-nano` vía OpenRouter (se revisa en la comparación final) |
+| D01 | Modelo de desarrollo | `openai/gpt-4.1-nano` vía OpenRouter (**superada por D49** para la entrega) |
 | D02 | Qué se versiona | Sí: políticas, catálogo de problemas, ejemplos. No: parquet, `.env`, PDF, MLflow local |
 | D03 | Hora de corte y "posterior" | `hora ≥ 14:00` ⇒ día siguiente; entrega = primera visita **estrictamente** posterior |
 | D04 | Redondeo | `Decimal`, mitad hacia arriba por subtotal; total = suma sin re-redondear |
@@ -59,10 +59,14 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D46 | MLflow en Compose | `ghcr.io/mlflow/mlflow:v3.18.0`, sqlite + artefactos servidos en el volumen `mlflow-datos`, `--allowed-hosts` con `mlflow:5000` y localhost |
 | D47 | Compose: dependencias, variables y salud | `depends_on` simple (sin `service_healthy`), variables de D43 en `environment`, datos `:ro`, healthchecks, `restart: unless-stopped` |
 | D48 | Puertos configurables | `API_PUERTO` (8000) y `MLFLOW_PUERTO` (5000) |
+| D49 | Elección del modelo (comparación) | `google/gemini-2.5-flash-lite`: 177/177, p95 ≈ 1.1 s, USD 0.0002 por pedido; resolución ampliada (otra mención, corrección ambigua) |
 
 ---
 
 ## D01 · Modelo de desarrollo: `openai/gpt-4.1-nano`
+
+> **Superada por D49** (2026-11-23): sigue siendo el modelo con el que se desarrolló, pero el
+> que se entrega en `.env.example` es `google/gemini-2.5-flash-lite`.
 
 - **Contexto.** El desarrollo y las pruebas llaman muchas veces al modelo; el evaluador usará el
   modelo de `.env.example` con su propia clave y medirá latencia.
@@ -1185,6 +1189,67 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
   `docker-compose.override.yml` local (otro archivo, fácil de olvidar versionado).
 - **Justificación / evidencia.** Pruebas y clon limpio en 8002/5002 sin tocar el contenedor
   que ocupa el 8000.
+
+
+## D49 · Elección del modelo: `google/gemini-2.5-flash-lite`
+
+- **Contexto.** El evaluador usa el modelo de `.env.example` con su propia clave y mide
+  calidad, integridad de precios y latencia; el PDF pide comparar al menos dos alternativas en
+  calidad, latencia y costo. El prompt y la resolución se ajustaron con `gpt-4.1-nano` (D01),
+  que en OpenRouter solo se sirve desde Azure (filtro de contenido, D32/D41) y tiene picos de
+  latencia del proveedor.
+- **Comparación** (`evidencia/comparacion/comparacion.md`; MLflow, experimento
+  `novapedidos-comparacion`): mismo código y mismos 177 casos (dev + variantes + control +
+  propios), 4 en paralelo, 2 repeticiones por modelo (Haiku 1), más 40 casos uno a uno para
+  los finalistas. Los 6 modelos aceptaron la salida estructurada `json_schema` estricta sin
+  cambios.
+
+  | Alternativa | Exactitud (media) | Propios | Inyección | p50 / p95 (s) | USD / 1000 pedidos |
+  |---|---:|---:|---:|---|---:|
+  | `openai/gpt-4.1-nano` | 98.9 % | 98.2 % | 100 % | 1.57 / 2.32 | 0.24 |
+  | nano **sin** resolución en código | 74.0 % | 72.7 % | 78.6 % | 1.59 / 3.25 | 0.24 |
+  | `openai/gpt-4.1-mini` | 99.2 % | 98.2 % | 100 % | 2.45 / 3.74 | 0.92 |
+  | `google/gemini-2.5-flash` (sin razonar) | 98.9 % | 96.4 % | 100 % | 1.13 / 1.58 | 0.69 |
+  | `google/gemini-2.5-flash-lite` | 99.4 % | 98.2 % | 100 % | 0.79 / 1.07 | 0.20 |
+  | `mistralai/mistral-small-3.2-24b-instruct` | 99.4 % | 98.2 % | 100 % | 2.78 / 5.16 | 0.50 |
+  | `anthropic/claude-haiku-4.5` | 99.4 % | 98.2 % | 100 % | 1.31 / 1.92 | 8.67 |
+  | **flash-lite + ajuste de resolución (abajo)** | **100 %** (2 de 2) | 100 % | 100 % | **0.78 / 1.16** | **0.21** |
+  | nano + ajuste de resolución | 99.4 % | 98.2 % | 100 % | 1.53 / 2.31 | 0.24 |
+
+  Integridad de precios 100 % en todas las corridas. Uno a uno (40 casos): flash-lite p95
+  1.13 s, nano 1.87 s, flash 1.66 s.
+- **Ajuste de la resolución (general, no por modelo).** 5 de los 6 modelos fallaban P029
+  ("dos quintales de arroz y un fardo de arroz ceiba de libra": "arroz" ambiguo porque la
+  palabra aparece dos veces) y 2.5-flash P022 ("perdón, de kola que sean 9" → `ambiguo`). Se
+  agregó a `ResolvedorProductos`: (1) `desambiguar_por_contexto` no cuenta las apariciones
+  del texto que están dentro del texto **más largo** de otra mención; (2)
+  `referencias_a_lo_pedido`: un `corregir`/`quitar` `ambiguo` con **exactamente una** opción
+  ya pedida en la conversación se resuelve a ella (un `agregar` ambiguo no se toca: la
+  política pide preguntar). Ninguno inventa sku. Pruebas
+  `test_desambiguar_por_contexto_ignora_el_texto_de_otra_mencion` y
+  `test_correccion_ambigua_se_refiere_a_lo_ya_pedido`. Con el ajuste nano pasa de 175 a
+  176/177 (sin regresiones) y flash-lite de 176 a 177/177 en dos repeticiones.
+- **Criterio.** (1) Máxima exactitud en propios e inyección e integridad de precios 100 %;
+  (2) p95 ≤ ~3 s con 4 en paralelo y máximo bajo; (3) costo ≤ USD 1 por 1000 pedidos;
+  (4) robustez con la clave del docente: proveedor sin filtro de jailbreak que rechace
+  pedidos, salida estructurada nativa, sin razonamiento obligatorio.
+- **Decisión.** `OPENROUTER_MODEL=google/gemini-2.5-flash-lite` en `.env.example`, `.env` y
+  como valor por defecto de `config.py`. `OPENROUTER_RAZONAMIENTO` vacío (el modelo no razona
+  por defecto). Las defensas D32/D41 se mantienen (no estorban y protegen si se vuelve a nano).
+- **Alternativas.** `gpt-4.1-nano` (mismo costo, 2× más lento, solo Azure con filtro de
+  contenido y picos de 6–15 s; queda como reserva); `gemini-2.5-flash` (más caro y falla una
+  corrección sin el ajuste); `gpt-4.1-mini` (4× el costo, p95 3.7 s); `mistral-small-3.2`
+  (cola de 12–15 s por proveedores de terceros sin caché); `claude-haiku-4.5` (misma
+  exactitud, 40× el costo).
+- **Justificación / evidencia.** Es la única alternativa que cumple los cuatro criterios a la
+  vez: 177/177 en dos repeticiones, el p50/p95 más bajos (0.78 / 1.16 s; máx 4.0 s), el costo
+  más bajo junto con nano y un proveedor (Google AI Studio) sin rechazos de contenido en los
+  14 casos de manipulación. Nuevo parámetro genérico `OPENROUTER_RAZONAMIENTO`
+  (`no`/`minimal`/`low`/`medium`/`high`, `--razonamiento` en `eval/correr.py`) para comparar
+  modelos que razonan; `--repeticion` como parámetro del run. **Riesgos:** el prompt y la
+  resolución se desarrollaron con nano, así que la exactitud en casos no publicados puede
+  diferir; un solo proveedor (Google AI Studio) sirve el modelo en OpenRouter; los modelos
+  2.5 de Google pueden retirarse (OpenRouter no anuncia fecha de expiración al 2026-11-23).
 
 ---
 

@@ -58,6 +58,7 @@ class EjecutorLocal:
         *,
         modelo: str | None = None,
         resolver: bool = True,
+        razonamiento: str | None = None,
         config: Configuracion | None = None,
     ) -> None:
         config = config or obtener_configuracion()
@@ -66,14 +67,18 @@ class EjecutorLocal:
         self.datos = datos
         self.modelo = modelo or config.openrouter_model
         self.resolver = resolver
+        self.razonamiento = (
+            config.openrouter_razonamiento if razonamiento is None else razonamiento
+        ) or "proveedor"
         self._interprete = InterpreteLLM(
             lambda: datos,
-            lambda: crear_modelo_chat(config, modelo=self.modelo),
+            lambda: crear_modelo_chat(config, modelo=self.modelo, razonamiento=razonamiento),
             nombre_modelo=self.modelo,
             resolver=resolver,
         )
         self.descripcion = (
             f"local · modelo {self.modelo} · resolución post-LLM {'sí' if resolver else 'no'}"
+            f" · razonamiento {self.razonamiento}"
         )
 
     def __call__(self, caso: dict[str, Any]) -> Ejecucion:

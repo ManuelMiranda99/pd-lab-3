@@ -47,6 +47,11 @@ def construir_parser() -> argparse.ArgumentParser:
     p.add_argument("--url", help="evaluar la API por HTTP (p. ej. http://127.0.0.1:8001)")
     p.add_argument("--modelo", help="modelo de OpenRouter (solo en proceso; por defecto .env)")
     p.add_argument(
+        "--razonamiento",
+        help="razonamiento en OpenRouter: no, minimal, low, medium, high (def. "
+        "OPENROUTER_RAZONAMIENTO; vacío = el del proveedor)",
+    )
+    p.add_argument(
         "--sin-resolucion", action="store_true", help="sin la resolución post-LLM (en proceso)"
     )
     p.add_argument("--concurrencia", type=int, default=4, help="casos en paralelo (def. 4)")
@@ -75,6 +80,9 @@ def construir_parser() -> argparse.ArgumentParser:
         "--variante",
         default="base",
         help="nombre de la alternativa evaluada (parámetro del run; p. ej. prompt o arquitectura)",
+    )
+    p.add_argument(
+        "--repeticion", type=int, default=1, help="número de repetición (parámetro del run)"
     )
     return p
 
@@ -110,7 +118,12 @@ def main(argv: list[str] | None = None, observadores: tuple[Any, ...] = ()) -> i
         etiqueta = "http"
     else:
         try:
-            ejecutor = EjecutorLocal(datos, modelo=args.modelo, resolver=not args.sin_resolucion)
+            ejecutor = EjecutorLocal(
+                datos,
+                modelo=args.modelo,
+                resolver=not args.sin_resolucion,
+                razonamiento=args.razonamiento,
+            )
         except ErrorInterprete as exc:
             print(f"No se puede evaluar en proceso: {exc}", file=sys.stderr)
             return 2
@@ -129,6 +142,8 @@ def main(argv: list[str] | None = None, observadores: tuple[Any, ...] = ()) -> i
             datos,
             parametros={
                 "variante": args.variante,
+                "repeticion": args.repeticion,
+                "razonamiento": "" if args.url else ejecutor.razonamiento,
                 "ejecutor": "http" if args.url else "local",
                 "url": args.url or "",
                 "archivos": ",".join(str(a) for a in args.archivos),

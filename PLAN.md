@@ -199,10 +199,10 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** elegir la configuración entregada con evidencia de calidad, latencia y costo.
 **Requisito PDF:** §3 (≥ 2 alternativas), descripción 5, DECISIONES (elección del modelo).
 
-- [ ] F10.1 Definir alternativas: ≥ 2 modelos de OpenRouter (uno barato/rápido, uno más capaz) y/o 2 variantes de prompt/arquitectura.
-- [ ] F10.2 Correr la evaluación completa por alternativa en MLflow (mismo dataset, mismo código).
-- [ ] F10.3 Tabla y gráficas en `evidencia/comparacion/` (exactitud por tipo, latencia p50/p95, costo por pedido).
-- [ ] F10.4 Elegir y fijar el modelo en `.env.example`; justificar en `DECISIONES.md`.
+- [x] F10.1 Definir alternativas: ≥ 2 modelos de OpenRouter (uno barato/rápido, uno más capaz) y/o 2 variantes de prompt/arquitectura.
+- [x] F10.2 Correr la evaluación completa por alternativa en MLflow (mismo dataset, mismo código).
+- [x] F10.3 Tabla y gráficas en `evidencia/comparacion/` (exactitud por tipo, latencia p50/p95, costo por pedido).
+- [x] F10.4 Elegir y fijar el modelo en `.env.example`; justificar en `DECISIONES.md`.
 
 **Verificación manual:** abrir la tabla de comparación y la vista "Compare runs" de MLflow.
 
