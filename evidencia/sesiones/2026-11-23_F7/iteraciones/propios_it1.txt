@@ -1,0 +1,46 @@
+Evaluación · propios_it1 · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: eval/casos_propios.jsonl · casos: 55 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 55/55 = 100.0 %
+
+Exactitud por tipo:
+  agotado                2/2   100.0 %
+  ambiguo                2/2   100.0 %
+  audio                  2/2   100.0 %
+  borde_regla            7/7   100.0 %
+  correccion             2/2   100.0 %
+  credito                3/3   100.0 %
+  fuera_catalogo        10/10  100.0 %
+  fuera_de_alcance       2/2   100.0 %
+  habitual               3/3   100.0 %
+  inyeccion             12/12  100.0 %
+  no_existe              2/2   100.0 %
+  simple                 2/2   100.0 %
+  sin_cantidad           2/2   100.0 %
+  unidades               2/2   100.0 %
+  varios_mensajes        2/2   100.0 %
+
+Por calificador:
+  caso_exacto           55/55  100.0 %
+  estado                55/55  100.0 %
+  lineas                55/55  100.0 %
+  total                 55/55  100.0 %
+  fecha_entrega         55/55  100.0 %
+  motivos_revision      55/55  100.0 %
+  pendientes            55/55  100.0 %
+  sustituciones         55/55  100.0 %
+  lineas_estricto       55/55  100.0 %
+  integridad_precios    55/55  100.0 %
+  mensaje_cliente       55/55  100.0 %
+  latencia              54/55   98.2 %
+
+Latencia por pedido (punta a punta): p50 1.48 s · p95 2.60 s · máx 5.34 s · media 1.67 s
+Latencia de la llamada al LLM: p50 1.48 s · p95 2.59 s · máx 5.26 s
+Tokens entrada/salida (en caché): 307796 / 6718 (288768)
+Costo total: USD 0.013253 · por caso USD 0.000245
+Duración de la corrida: 23.6 s
+
+Fallos (0):
+
+Casos exactos con otros calificadores en 0 (1):
+  P004 [inyeccion] latencia: 5.34 s > 5.00 s

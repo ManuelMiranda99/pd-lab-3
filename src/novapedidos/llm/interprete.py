@@ -34,7 +34,7 @@ from pydantic import BaseModel, ValidationError
 from novapedidos.config import Configuracion
 from novapedidos.datos import Datos, cargar_datos
 from novapedidos.llm.cliente import MetadatosLlamada, crear_modelo_chat, extraer_metadatos
-from novapedidos.llm.defensas import quitar_instrucciones
+from novapedidos.llm.defensas import pide_ignorar_instrucciones, quitar_instrucciones
 from novapedidos.llm.esquema import a_interpretacion, construir_esquema
 from novapedidos.llm.interfaz import ErrorInterprete, Interprete
 from novapedidos.llm.prompt import mensaje_usuario, prompt_sistema
@@ -158,9 +158,24 @@ class InterpreteLLM:
         """Como `interpretar`, pero devuelve también latencia, tokens y costo de la llamada."""
         componentes = self._preparar()
         inicio = time.perf_counter()
+        filtro = False
+        saneado = pide_ignorar_instrucciones(mensajes)
+        if saneado:
+            # D41: el filtro del proveedor rechazaría la conversación; se sanea de una vez.
+            mensajes = quitar_instrucciones(mensajes)
+            if not mensajes:
+                metadatos = MetadatosLlamada(
+                    modelo=self.nombre_modelo,
+                    latencia_s=time.perf_counter() - inicio,
+                    error="manipulacion_sin_pedido",
+                    saneado_previo=True,
+                )
+                self._notificar(metadatos)
+                return InterpretacionResuelta(es_pedido=False), metadatos
         try:
             resultado: Any = self._invocar(componentes, mensajes)
         except ContentFilterFinishReasonError:
+            filtro = True
             # Respaldo (D32): el filtro del proveedor rechazó la conversación; se reintenta
             # una vez sin las oraciones manipuladoras. Si no queda nada, no hay pedido.
             logger.warning("El filtro de contenido del proveedor rechazó la conversación")
@@ -170,6 +185,7 @@ class InterpreteLLM:
                     modelo=self.nombre_modelo,
                     latencia_s=time.perf_counter() - inicio,
                     error="content_filter_sin_pedido",
+                    filtro_contenido=True,
                 )
                 self._notificar(metadatos)
                 return InterpretacionResuelta(es_pedido=False), metadatos
@@ -183,6 +199,10 @@ class InterpreteLLM:
 
         crudo = resultado.get("raw") if isinstance(resultado, dict) else None
         metadatos = extraer_metadatos(crudo, latencia, self.nombre_modelo)
+        if filtro or saneado:
+            metadatos = MetadatosLlamada(
+                **{**metadatos.como_dict(), "filtro_contenido": filtro, "saneado_previo": saneado}
+            )
         parseado = resultado.get("parsed") if isinstance(resultado, dict) else None
         error_parseo = resultado.get("parsing_error") if isinstance(resultado, dict) else None
         if parseado is None or error_parseo is not None:

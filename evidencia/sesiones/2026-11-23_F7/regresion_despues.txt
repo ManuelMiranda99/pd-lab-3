@@ -1,0 +1,46 @@
+Evaluación · regresion_despues · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: ejemplos/mensajes_dev.jsonl, eval/casos_variantes.jsonl, eval/casos_control.jsonl · casos: 122 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 122/122 = 100.0 %
+
+Exactitud por tipo:
+  agotado                8/8   100.0 %
+  ambiguo               13/13  100.0 %
+  audio                  4/4   100.0 %
+  correccion            11/11  100.0 %
+  credito                6/6   100.0 %
+  fuera_de_alcance       8/8   100.0 %
+  habitual              13/13  100.0 %
+  manipulacion           2/2   100.0 %
+  no_existe              6/6   100.0 %
+  simple                23/23  100.0 %
+  sin_cantidad           5/5   100.0 %
+  unidades              14/14  100.0 %
+  varios_mensajes        9/9   100.0 %
+
+Exactitud por archivo:
+  casos_control.jsonl           14/14  100.0 %
+  casos_variantes.jsonl         24/24  100.0 %
+  mensajes_dev.jsonl            84/84  100.0 %
+
+Por calificador:
+  caso_exacto          122/122 100.0 %
+  estado               122/122 100.0 %
+  lineas               122/122 100.0 %
+  total                122/122 100.0 %
+  fecha_entrega        122/122 100.0 %
+  motivos_revision     122/122 100.0 %
+  pendientes           122/122 100.0 %
+  sustituciones        122/122 100.0 %
+  lineas_estricto      122/122 100.0 %
+  integridad_precios   122/122 100.0 %
+  mensaje_cliente      122/122 100.0 %
+  latencia             122/122 100.0 %
+
+Latencia por pedido (punta a punta): p50 1.52 s · p95 2.15 s · máx 3.52 s · media 1.59 s
+Latencia de la llamada al LLM: p50 1.52 s · p95 2.14 s · máx 3.51 s
+Tokens entrada/salida (en caché): 717030 / 16436 (680192)
+Costo total: USD 0.030664 · por caso USD 0.000251
+Duración de la corrida: 48.9 s
+
+Fallos (0):

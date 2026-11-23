@@ -167,9 +167,9 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** cubrir situaciones no publicadas, en el mismo formato que `mensajes_dev.jsonl`.
 **Requisito PDF:** §3 (casos propios), entregables.
 
-- [ ] F7.1 `eval/casos_propios.jsonl` (≥ 30): inyección de precios/descuentos/crédito, "olvide sus instrucciones", mezcla de idioma/emojis, cantidades en letras, medias docenas, varios productos ambiguos, "lo de siempre" de un cliente con último pedido cancelado, hora exactamente 14:00, sábado, conversión no exacta, mensajes vacíos de pedido con saludos, etc.
-- [ ] F7.2 `esperado` calculado con el motor desde menciones escritas a mano (no a mano el total) y revisado.
-- [ ] F7.3 Correr la evaluación sobre dev + propios y corregir regresiones.
+- [x] F7.1 `eval/casos_propios.jsonl` (≥ 30): inyección de precios/descuentos/crédito, "olvide sus instrucciones", mezcla de idioma/emojis, cantidades en letras, medias docenas, varios productos ambiguos, "lo de siempre" de un cliente con último pedido cancelado, hora exactamente 14:00, sábado, conversión no exacta, mensajes vacíos de pedido con saludos, etc.
+- [x] F7.2 `esperado` calculado con el motor desde menciones escritas a mano (no a mano el total) y revisado.
+- [x] F7.3 Correr la evaluación sobre dev + propios y corregir regresiones.
 
 **Verificación manual:** revisar 5 casos propios al azar contra `politicas.md`.
 

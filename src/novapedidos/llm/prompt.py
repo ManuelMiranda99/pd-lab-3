@@ -65,6 +65,9 @@ pura" sin tamaño (B07, B08). Si el cliente da la marca o la presentación que l
 - Si la distribuidora NO vende ese producto (no está en el catálogo: cerveza, velas, \
 recargas, gas, cigarros, pan, etc.), resolucion="no_existe" y sku=null. Nunca inventes ni \
 aproximes un sku de otro producto.
+- Una MARCA que no está en el catálogo es un producto que no se vende ("aceite capullo", \
+"pepsi", "galletas oreo"): resolucion="no_existe"; no la cambies por otra marca ni la marques \
+"ambiguo".
 - Un producto agotado se pide igual con su sku (el sistema aplica el sustituto).
 - texto = el fragmento que nombra el producto COPIADO TAL CUAL del mensaje (con su marca, \
 tamaño y faltas de ortografía), sin la cantidad, sin la unidad de empaque y sin saludos \
@@ -76,6 +79,8 @@ producto (cerveza, recargas, gas…), aunque lo pida en libras, cartones, paquet
 medida que la distribuidora no usa; van con resolucion="no_existe".
 - Un producto de varias palabras ("café instantáneo", "papel higiénico", "harina de maíz") \
 es UNA sola mención: nunca lo partas en dos menciones.
+- Solo cuenta lo que pide AHORA: un producto nombrado solo en un reclamo o en algo que ya \
+pasó ("la vez pasada me llegó roto un fardo de agua") NO es una mención.
 
 CANTIDADES Y UNIDADES:
 - cantidad = el número dicho, en cifras o en letras ("dos" = 2, "una" = 1). Si no dice \
@@ -89,7 +94,8 @@ sobre 10 ml"), no es la unidad.
 - unidad = "docena" para "una docena", "2 docenas" (cantidad = número de docenas: "2 \
 docenas" = cantidad 2, NUNCA 24).
 - La presentación del producto ("500 ml", "600", "1.5 L", "64 g", "5 lb", "12 rollos") es \
-parte del nombre, NUNCA una unidad suelta: "6 te frio quetzal limon 500 ml" = 6 en "venta".
+parte del nombre, NUNCA una unidad suelta: "6 te frio quetzal limon 500 ml" = 6 en "venta". La \
+presentación también se dice en letras ("kola seiscientos" = kola 600): cópiala en texto.
 - No conviertas, no multipliques ni redondees: copia el número que dijo el cliente; el \
 sistema convierte. Si el número está escrito, cópialo siempre ("2 cajas de cloro" = 2).
 
@@ -101,6 +107,8 @@ añadir más, es otra mención "agregar".
 X" cuando X ya estaba pedido). Repite el producto \
 con la NUEVA cantidad y accion="corregir" (no borres la mención original).
 - "quitar": "sin X", "pero sin X", "quíteme X", "ya no me mande X" (cantidad = null).
+- Si después el cliente cancela TODO ("mejor no me mande nada", "cancele el pedido"), cada \
+producto que había pedido va además como "quitar".
 
 "LO DE SIEMPRE":
 - lo_de_siempre=true si pide "lo de siempre", "lo mismo de la otra vez/la vez pasada", "lo \
@@ -118,7 +126,9 @@ orden en que aparecen.
 - Audios transcritos traen muletillas ("eh", "este", "ajá", "mire", "fíjese"): ignóralas.
 - es_pedido=false (y menciones=[]) si NO pide productos: consultas ("¿a qué hora pasa el \
 camión?", "¿cuánto le debo?", "¿ya tienen la lista de precios?"), agradecimientos, reclamos \
-o saludos sin pedido. Si pide al menos un producto o "lo de siempre", es_pedido=true.
+o saludos sin pedido. Si pide al menos un producto o "lo de siempre", es_pedido=true, \
+AUNQUE ninguno de los productos se venda ("2 cilindros de gas y unas veladoras" = pedido con \
+menciones no_existe).
 """
 
 
@@ -220,6 +230,15 @@ EJEMPLOS: list[tuple[list[str], dict[str, Any]]] = [
                 _m("leche vaquita", sku="A16", cantidad=2),
                 _m("cocas", "ambiguo", cantidad=3, opciones=["B01", "B02", "B03"]),
                 _m("frijol rojo", sku="A04", cantidad=5),
+            ]
+        ),
+    ),
+    (
+        ["fíjese que necesito 3 bolsas de carbón y un paquete de fósforos"],
+        _salida(
+            [
+                _m("carbón", "no_existe", cantidad=3),
+                _m("fósforos", "no_existe", cantidad=1),
             ]
         ),
     ),

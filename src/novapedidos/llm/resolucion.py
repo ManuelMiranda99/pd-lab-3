@@ -109,6 +109,10 @@ SINONIMOS_PALABRA: dict[str, str] = {
     "cola": "kola",
     "juguito": "jugo",
     "jugito": "jugo",
+    # Presentaciones dichas en letras (audios, D40): "kola seiscientos" = "kola 600".
+    "seiscientos": "600",
+    "quinientos": "500",
+    "setecientos": "750",
 }
 
 
@@ -261,7 +265,7 @@ def _cantidad_en_mensaje(m: Mencion, texto_suave: str) -> tuple[int, Unidad] | N
     inicio = palabras_inicio(m.texto)
     if not inicio:
         return None
-    patron = _PATRON_CANTIDAD + r" +".join(map(re.escape, inicio)) + r"\b"
+    patron = _PATRON_CANTIDAD + _unir_palabras(inicio) + r"\b"
     lecturas = set()
     for coincidencia in re.finditer(patron, texto_suave):
         n_txt, u = coincidencia.group("n"), coincidencia.group("u") or ""
@@ -278,6 +282,15 @@ def _cantidad_en_mensaje(m: Mencion, texto_suave: str) -> tuple[int, Unidad] | N
             unidad = Unidad.VENTA
         lecturas.add((n, unidad))
     return lecturas.pop() if len(lecturas) == 1 else None
+
+
+_VACIAS_TXT = "|".join(sorted(_VACIAS))
+
+
+def _unir_palabras(inicio: Sequence[str]) -> str:
+    """Patrón de las palabras de contenido de un texto permitiendo palabras vacías entre ellas
+    ("kola de 3 litros" → `kola( de)* 3`)."""
+    return rf"(?: +(?:{_VACIAS_TXT}))* +".join(map(re.escape, inicio))
 
 
 def palabras_inicio(texto: str) -> list[str]:
@@ -311,6 +324,43 @@ def anclar_cantidades(menciones: Sequence[Mencion], mensajes: Sequence[str]) -> 
             if lectura is not None and lectura != (m.cantidad, m.unidad):
                 cantidad, unidad = lectura
                 m = m.model_copy(update={"cantidad": cantidad, "unidad": unidad})
+        resultado.append(m)
+    return resultado
+
+
+_NUMERO_TXT = r"(?P<n>\d+|" + "|".join(NUMEROS_EN_LETRAS) + r")"
+_ARTICULO_TXT = r"(?:de +)?(?:(?:el|la|los|las) +)?"
+
+
+def _numero(texto: str) -> int:
+    return int(texto) if texto.isdigit() else NUMEROS_EN_LETRAS[texto]
+
+
+def docenas_de_empaques(menciones: Sequence[Mencion], mensajes: Sequence[str]) -> list[Mencion]:
+    """ "Una docena de cajas de sopa" son 12 **cajas** (unidad de venta), no 12 sopas sueltas
+    (D40): si el mensaje pone "<n> docena(s) de <empaque> de <producto>" (o "media docena de
+    cajas de…") justo antes del producto de una mención `agregar`, la cantidad es 12 × n
+    unidades de venta. Solo con una única lectura."""
+    texto = normalizar_suave(" ".join(mensajes))
+    resultado = []
+    for m in menciones:
+        inicio = palabras_inicio(m.texto)
+        if m.accion == Accion.AGREGAR and inicio:
+            patron = (
+                r"(?<![\w.])(?P<n>\d+|media|" + "|".join(NUMEROS_EN_LETRAS) + r") +docenas? +de +"
+                r"(?:"
+                + _UNIDADES_VENTA_TXT
+                + r") +"
+                + _ARTICULO_TXT
+                + _unir_palabras(inicio)
+                + r"\b"
+            )
+            lecturas = {
+                6 if x.group("n") == "media" else 12 * _numero(x.group("n"))
+                for x in re.finditer(patron, texto)
+            }
+            if len(lecturas) == 1:
+                m = m.model_copy(update={"cantidad": lecturas.pop(), "unidad": Unidad.VENTA})
         resultado.append(m)
     return resultado
 
@@ -402,6 +452,44 @@ class ResolvedorProductos:
         return m.model_copy(
             update={"resolucion": Resolucion.SKU, "sku": elegidos.pop(), "opciones": []}
         )
+
+    def medias_unidades(
+        self, menciones: Sequence[Mencion], mensajes: Sequence[str]
+    ) -> list[Mencion]:
+        """ "Una caja y media de cloro", "medio fardo de agua": no es una unidad de venta
+        completa (§2, D40). La mención pasa a unidades sueltas con una cantidad que **no** es
+        múltiplo del empaque (n × empaque + empaque // 2), así el motor registra
+        `cantidad_no_convertible` en lugar de redondear. Solo menciones `sku` que agregan o
+        corrigen, con empaque ≥ 2 y una única lectura."""
+        texto = normalizar_suave(" ".join(mensajes))
+        resultado = []
+        for m in menciones:
+            producto = self.datos.productos.get(m.sku or "")
+            inicio = palabras_inicio(m.texto)
+            if (
+                m.resolucion == Resolucion.SKU
+                and m.accion != Accion.QUITAR
+                and producto is not None
+                and producto.unidades_por_empaque >= 2
+                and inicio
+            ):
+                nombre = _ARTICULO_TXT + _unir_palabras(inicio) + r"\b"
+                empaque = r"(?:" + _UNIDADES_VENTA_TXT + r")"
+                y_media = rf"(?<![\w.]){_NUMERO_TXT} +{empaque} +y +medi[oa] +" + nombre
+                media = rf"(?<![\w.])medi[oa] +{empaque} +" + nombre
+                mitades = {_numero(x.group("n")) for x in re.finditer(y_media, texto)}
+                if re.search(media, texto):
+                    mitades.add(0)
+                if len(mitades) == 1:
+                    e = producto.unidades_por_empaque
+                    m = m.model_copy(
+                        update={
+                            "cantidad": mitades.pop() * e + e // 2,
+                            "unidad": Unidad.UNIDAD_SUELTA,
+                        }
+                    )
+            resultado.append(m)
+        return resultado
 
     def difuso(self, texto: str) -> str | None:
         """sku único muy parecido al texto (errores de ortografía), o `None`."""
@@ -552,6 +640,8 @@ class ResolvedorProductos:
             menciones = [self.desambiguar_por_contexto(m, mensajes) for m in menciones]
             menciones = anclar_cantidades(menciones, mensajes)
             menciones = verificar_unidades(menciones, mensajes)
+            menciones = docenas_de_empaques(menciones, mensajes)
+            menciones = self.medias_unidades(menciones, mensajes)
             menciones = detectar_correcciones(menciones, mensajes)
         return interpretacion.model_copy(update={"menciones": menciones})
 
@@ -588,6 +678,7 @@ __all__ = [
     "MARGEN_DIFUSO",
     "NUMEROS_EN_LETRAS",
     "anclar_cantidades",
+    "docenas_de_empaques",
     "normalizar_suave",
     "SINONIMOS_PALABRA",
     "UMBRAL_DIFUSO",

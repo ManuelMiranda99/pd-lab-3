@@ -43,6 +43,12 @@ class MetadatosLlamada:
     costo_usd: float | None = None
     id_generacion: str | None = None
     error: str | None = None
+    #: El filtro de contenido del proveedor rechazó la conversación y se reintentó sin las
+    #: oraciones manipuladoras (D32): la latencia incluye las dos llamadas.
+    filtro_contenido: bool = False
+    #: La conversación pedía ignorar las instrucciones y se saneó antes de la primera llamada
+    #: (D41): una sola llamada en vez de rechazo + reintento.
+    saneado_previo: bool = False
 
     def como_dict(self) -> dict[str, Any]:
         return asdict(self)

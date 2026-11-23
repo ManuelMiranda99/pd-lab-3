@@ -1,0 +1,61 @@
+Evaluación · regresion_it2 · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: ejemplos/mensajes_dev.jsonl, eval/casos_variantes.jsonl, eval/casos_control.jsonl · casos: 122 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 121/122 = 99.2 %
+
+Exactitud por tipo:
+  agotado                8/8   100.0 %
+  ambiguo               13/13  100.0 %
+  audio                  4/4   100.0 %
+  correccion            11/11  100.0 %
+  credito                6/6   100.0 %
+  fuera_de_alcance       8/8   100.0 %
+  habitual              13/13  100.0 %
+  manipulacion           2/2   100.0 %
+  no_existe              6/6   100.0 %
+  simple                22/23   95.7 %
+  sin_cantidad           5/5   100.0 %
+  unidades              14/14  100.0 %
+  varios_mensajes        9/9   100.0 %
+
+Exactitud por archivo:
+  casos_control.jsonl           14/14  100.0 %
+  casos_variantes.jsonl         24/24  100.0 %
+  mensajes_dev.jsonl            83/84   98.8 %
+
+Por calificador:
+  caso_exacto          121/122  99.2 %
+  estado               121/122  99.2 %
+  lineas               121/122  99.2 %
+  total                121/122  99.2 %
+  fecha_entrega        122/122 100.0 %
+  motivos_revision     121/122  99.2 %
+  pendientes           121/122  99.2 %
+  sustituciones        122/122 100.0 %
+  lineas_estricto      121/122  99.2 %
+  integridad_precios   122/122 100.0 %
+  mensaje_cliente      122/122 100.0 %
+  latencia             121/122  99.2 %
+
+Latencia por pedido (punta a punta): p50 1.56 s · p95 2.17 s · máx 8.65 s · media 1.68 s
+Latencia de la llamada al LLM: p50 1.56 s · p95 2.17 s · máx 8.65 s
+Tokens entrada/salida (en caché): 695680 / 16497 (671488)
+Costo total: USD 0.029163 · por caso USD 0.000239
+Duración de la corrida: 51.7 s
+
+Fallos (1):
+✗ D046 [simple] C019 2026-11-28T19:38
+    mensajes: ['Disculpe la hora, buenas noches, me manda coditos bella: 4 y 6 azúcar dulzura 5 lb 👍']
+    - estado: requiere_revision ≠ confirmado
+    - lineas: faltan [('A05', 6), ('A09', 4)]; sobran [('A05', 5)]
+    - total: 1078.0 ≠ 1677.6
+    - motivos_revision: ['producto_ambiguo'] ≠ []
+    - pendientes: sobran [('producto_ambiguo', ('A09', 'A10'))]
+    - lineas_estricto: 1 líneas ≠ 2
+    esperado: confirmado · líneas [A09×4, A05×6] · total 1677.6 · fecha 2026-12-02 · motivos [] · pendientes [∅]
+    obtenido: requiere_revision · líneas [A05×5] · total 1078.0 · fecha 2026-12-02 · motivos ['producto_ambiguo'] · pendientes [producto_ambiguo«pasta bella»['A09', 'A10']]
+      · 'pasta bella' → ambiguo ['A09', 'A10'] · 4 venta · agregar
+      · 'azúcar dulzura' → sku A05 · 5 venta · agregar
+
+Casos exactos con otros calificadores en 0 (1):
+  V03 [unidades] latencia: 8.65 s > 5.00 s

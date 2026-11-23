@@ -255,3 +255,34 @@
 
 ### Próxima sesión
 - Fase 7: casos propios; medir antes de ajustar; investigar latencia de cola.
+
+---
+
+## Sesión 2026-11-23 — Fase 7 (inicio)
+**Fase:** 7 — Casos de evaluación propios
+**Estado al cerrar:** Fase 7 cerrada ✅ (subagente; verificada por la sesión principal)
+
+### Logrado
+- F7.1 `eval/casos_propios.py` → `eval/casos_propios.jsonl`: 55 casos (12 inyección, 10 fuera del catálogo, 7 bordes de regla, resto por tipo dev); esperado calculado con el motor.
+- F7.2 `tests/test_casos_propios.py` (sincronía, claves, cobertura).
+- F7.3 Medición antes de ajustar y 3 iteraciones de mejoras generales; investigación de latencia de cola.
+
+### Verificación
+- pytest: 451 pasan · ruff ok.
+- Propios: **48/55 (87.3 %) antes** de ajustar (estimación honesta) → 54/55 después; verificación de la sesión principal 55/55, p95 2.17 s.
+- dev/variantes/control 122/122. `integridad_precios` 100 % en todas las corridas. Gasto ≈ USD 0.18.
+
+### Lo que falló
+- 7 casos propios fallaban antes (media docena, caja y media, docena de cajas, marca no vendida, reclamo + pedido…) · resueltos con cambios generales.
+- El prompt es frágil: cada regla nueva rompía otro caso · resuelto reubicando reglas y con un ejemplo nuevo.
+- P036 intermitente ("papel suave 12" → cantidad 1) · sin resolver (nano no determinista).
+- Latencia de cola = picos de generación del proveedor (Azure), no reintentos · mitigado el doble llamado del filtro (D41); primera ola lenta ocasional sin causa exacta.
+
+### Capturas
+- evidencia/sesiones/2026-11-23_F7/{propios_antes,propios_despues,regresion_despues}.txt, latencia/, resumen_fase7.md.
+
+### Decisiones tomadas
+- D38–D41 (casos propios, políticas no cubiertas, mejoras de prompt, latencia).
+
+### Próxima sesión
+- Fase 8 (MLflow): registrar `filtro_contenido`, `saneado_previo`, `id_generacion` en las trazas.
