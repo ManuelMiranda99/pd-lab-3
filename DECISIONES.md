@@ -25,6 +25,13 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D12 | Crédito junto a pendientes | Se evalúan ambos; el crédito usa el total de las líneas calculadas |
 | D13 | Datos: carga y validación | Carga única por proceso, estructuras inmutables, validación estricta con `ErrorDatos` |
 | D14 | Tipos del motor de cálculos | `Decimal` en todo el motor (`LineaCalculada` congelada); a `float` de 2 decimales solo al serializar en la API; `fecha_hora` con parser estricto |
+| D15 | Estructura intermedia del motor | `InterpretacionResuelta{es_pedido, lo_de_siempre, posicion_lo_de_siempre, menciones}` + `Mencion{texto, resolucion, sku, opciones, cantidad, unidad, accion}` planas y tolerantes |
+| D16 | Cantidades raras | `null` → 1; `agregar` ≤ 0 se ignora, `corregir` ≤ 0 = quitar; no exacta → `cantidad_no_convertible` con `opciones=[sku]` |
+| D17 | Agregar / corregir / quitar | Secuencial sobre el sku **solicitado**; corregir/quitar X también alcanza lo que se entregaría como X; pendientes sin duplicar |
+| D18 | "Lo de siempre" sin pedidos entregados | Pendiente `producto_ambiguo`, `texto="lo de siempre"`, `opciones=[]` → `requiere_revision` |
+| D19 | Pedido que queda vacío | Sin líneas ni pendientes (todo quitado, cantidades 0) → `fuera_de_alcance` |
+| D20 | Mensaje al cliente | Plantilla determinista con los datos ya calculados (sin LLM) |
+| D21 | Contrato compartido | `novapedidos.contrato` (Pydantic): montos `Decimal` → número de 2 decimales en JSON; `ErrorClienteInexistente` para el 404 |
 
 ---
 
@@ -257,6 +264,139 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 - **Justificación / evidencia.** `tests/test_motor_calculos.py` (59 pruebas sintéticas) y
   `tests/test_regresion_dev.py` (84/84 casos dev: precio, descuento, subtotal, total, fecha de
   entrega y crédito).
+
+## D15 · Estructura intermedia que recibe el motor
+
+- **Contexto.** La Fase 5 (LLM + resolvedor de productos) debe entregar al motor un pedido "ya
+  entendido". Hay que fijar esa estructura pensando en que un modelo barato la llene de forma
+  fiable y en que todo lo determinista quede en código.
+- **Decisión.** `novapedidos.motor.modelos`:
+  - `InterpretacionResuelta`: `es_pedido: bool`, `lo_de_siempre: bool = False`,
+    `posicion_lo_de_siempre: int = 0` (cuántas menciones van antes de la expresión; 0 = al
+    inicio) y `menciones: list[Mencion]` en orden de aparición (mensajes concatenados).
+  - `Mencion`: `texto` (fragmento que nombra el producto, sin cantidad ni unidad),
+    `resolucion` ∈ {`sku`, `ambiguo`, `no_existe`}, `sku: str | None`, `opciones: list[str]`,
+    `cantidad: int | None` (`null` = no dijo), `unidad` ∈ {`venta`, `unidad_suelta`, `docena`}
+    y `accion` ∈ {`agregar`, `corregir`, `quitar`}.
+  - **Planos** (sin uniones discriminadas) y **tolerantes** (casi sin validadores duros): el
+    motor normaliza combinaciones raras en vez de fallar — `sku` fuera del catálogo o vacío →
+    `producto_no_existe`; opciones de un ambiguo filtradas al catálogo, sin duplicados y
+    ordenadas (D10); ambiguo con 0 opciones válidas → no existe; con 1 → ese sku.
+  - Sin campos de precio, descuento ni crédito (regla 3 de `CLAUDE.md`; lo verifica una prueba).
+- **Alternativas.** Resolución como unión discriminada `Sku | Ambiguo | NoExiste` (más estricta,
+  pero los esquemas estrictos de salida estructurada manejan peor las uniones); "lo de siempre"
+  como una mención especial en la lista (da la posición gratis, pero mezcla dos conceptos y
+  obliga a reglas especiales para cantidad/unidad); `lo_de_siempre` solo booleano (pierde el
+  orden de D08 cuando la expresión no va al inicio).
+- **Justificación / evidencia.** Los 73 casos dev escritos a mano en
+  `tests/test_motor_pedido_oraculo.py` caben en la estructura y reproducen el `esperado` exacto.
+  En todos los casos dev "lo de siempre" va al inicio, por eso el valor por defecto 0 basta; el
+  campo de posición solo afecta el orden. El esquema JSON pesa ~2.5 KB.
+
+## D16 · Cantidades: faltantes, no positivas y no convertibles
+
+- **Contexto.** `politicas.md` §2 cubre "sin cantidad" y "no exacta", pero no cantidades ≤ 0 ni
+  la interacción con agotados y sustitutos.
+- **Decisión.**
+  1. `cantidad = null` → 1 (de la unidad dicha: "una docena" sin número = 1 docena).
+  2. `agregar` con cantidad ≤ 0 se ignora (no hay nada que pedir); `corregir` con cantidad ≤ 0
+     equivale a `quitar` ("de cloro mejor ninguno").
+  3. `unidad_suelta` / `docena` se convierten con `unidades_por_empaque` del producto
+     **solicitado**; si no es exacta, pendiente `cantidad_no_convertible` con `texto` = fragmento
+     y `opciones = [sku]`, sin línea. Si ese producto ya tenía una línea por otra mención, la
+     línea se conserva. Un sustituto recibe la misma cantidad en unidades de venta (§4).
+  4. Agotado sin sustituto: la cantidad no importa; solo se registra `agotado_sin_sustituto`.
+  5. "Media docena" la debe extraer el LLM como 6 `unidad_suelta` (el campo es entero).
+- **Alternativas.** Pendiente para cantidades ≤ 0 (no existe un motivo del contrato que encaje);
+  `opciones = []` en `cantidad_no_convertible` (el sku es conocido y ayuda al asesor).
+- **Justificación / evidencia.** Pruebas `test_conversion_no_exacta_es_pendiente`,
+  `test_cantidades_no_positivas`, `test_convertir_a_unidades_de_venta` y
+  `test_agotado_sin_sustituto_con_cantidad_no_convertible_es_agotado`.
+
+## D17 · Semántica de agregar, corregir y quitar
+
+- **Contexto.** §2: las menciones repetidas se suman, una corrección explícita reemplaza, "sin X"
+  elimina la línea. Faltaba precisar cómo interactúan con sustitutos, pendientes y ambiguos.
+- **Decisión.** Las menciones se aplican **en orden** (con "lo de siempre" insertado en su
+  posición) sobre una lista de entradas por sku **solicitado**; la sustitución se aplica al final.
+  - `agregar` suma a la entrada del sku (posición de la primera mención).
+  - `corregir X` reemplaza **todo** lo dicho de X —incluido lo que se entregaría como X (p. ej.
+    A07 de "lo de siempre" cuando se corrige A06) y su pendiente de conversión— por la nueva
+    cantidad, **en la posición de la primera mención** (D08). Sin mención previa, se agrega.
+  - `quitar X` elimina lo pedido como X, lo que se entregaría como X y los pendientes ligados
+    (así "sin desodorante fresco" quita también el agotado de "lo de siempre", D040).
+  - `quitar` de un ambiguo ("sin las cocas") quita todas sus opciones y el pendiente ambiguo
+    equivalente; `quitar` de un no existente quita su pendiente.
+  - Pendientes sin duplicar: ambiguos con las mismas opciones, o mismo motivo y mismo texto
+    normalizado.
+  - Un `quitar` que aparece **antes** de "lo de siempre" no lo afecta (orden secuencial).
+- **Alternativas.** Aplicar los `quitar` de forma global al final (rompe "quíteme X… bueno sí,
+  mándeme 2 de X"); corregir solo la entrada literal del sku (dejaría A06 = 5 + 1 sustituido
+  cuando el cliente dijo "de aceite dorado son 5").
+- **Justificación / evidencia.** D020, D021, D041, D054, D062, D070, D073, D076, D077, D081
+  (correcciones), D025 y D040 (quitar de "lo de siempre") pasan en el oráculo; bordes en
+  `tests/test_motor_pedido.py` (suma, corrección, quitar sustituido, quitar ambiguo).
+
+## D18 · "Lo de siempre" de un cliente sin pedidos entregados
+
+- **Contexto.** D06.5 dejó a esta fase el mecanismo: no se inventan líneas y el pedido debe ir a
+  revisión, pero el contrato no tiene un motivo específico.
+- **Decisión.** Pendiente `producto_ambiguo` con `texto = "lo de siempre"` y `opciones = []`;
+  el pedido queda en `requiere_revision` (las demás menciones se procesan normalmente) y el
+  mensaje dice que no se encontró un pedido anterior entregado y que un asesor confirmará.
+- **Alternativas.** `producto_no_existe` (falso: los productos sí existen, lo que falta es saber
+  cuáles); `fuera_de_alcance` (el cliente sí quiere pedir); confirmar sin líneas (prohibido).
+- **Justificación / evidencia.** Es la referencia que no se puede resolver a productos concretos,
+  lo más cercano a "ambiguo". No ocurre en los casos dev (los 40 clientes tienen entregados);
+  prueba `test_lo_de_siempre_sin_pedidos_entregados`.
+
+## D19 · Pedido que se queda vacío
+
+- **Contexto.** `es_pedido = true` pero, tras aplicar todo, no hay líneas ni pendientes (p. ej.
+  "2 kolas… no, mejor nada" o un mensaje que solo dice "le hago mi pedido").
+- **Decisión.** `fuera_de_alcance`: sin líneas, total 0, `fecha_entrega = null`, sin motivos, y
+  el mensaje cortés de que un asesor atenderá su consulta.
+- **Alternativas.** `confirmado` (exige ≥ 1 línea, §8); `requiere_revision` sin motivo (el
+  contrato exige un pendiente o crédito excedido para ese estado).
+- **Justificación / evidencia.** Es el único estado coherente con el contrato.
+  Pruebas `test_todo_quitado_es_fuera_de_alcance` y `test_pedido_sin_menciones_es_fuera_de_alcance`.
+  Si `es_pedido = false` las menciones se ignoran por completo (nunca `credito_excedido`, D12).
+
+## D20 · Mensaje al cliente por plantilla determinista
+
+- **Contexto.** §9 pide una confirmación breve y cordial que no prometa agotados ni pendientes ni
+  mencione precios distintos. Era una decisión abierta del plan (plantilla vs LLM).
+- **Decisión.** `novapedidos.motor.mensaje.redactar_mensaje` arma el texto **solo** con la
+  respuesta calculada: saludo según la hora de `fecha_hora` (05–11:59 días, 12–18:59 tardes,
+  resto noches); productos con nombre del catálogo y cantidad + unidad de venta ("2 fardos de
+  Kola Norte 600 ml"); una frase por sustitución; una frase neutra por pendiente (sin
+  prometerlo); aviso de revisión de crédito sin montos; total calculado (`Q1,344.00`, único
+  monto citado); fecha en español ("Entrega el jueves 26 de noviembre" o "Entrega prevista…" si
+  hay revisión); "Un asesor le confirmará su pedido en breve" cuando hay revisión. Los textos
+  del cliente citados se recortan a 60 caracteres. `fuera_de_alcance`: "Gracias por
+  escribirnos. Un asesor atenderá su consulta en breve."
+- **Alternativas.** Redactar con el LLM restringido a los datos (tono más natural, pero suma
+  latencia y costo y puede inventar o prometer); sin total (válido, pero el total ayuda al
+  tendero).
+- **Justificación / evidencia.** Cero latencia y costo, coherencia garantizada con los números
+  (pruebas verifican que el único monto es el total) y resistencia a inyección (el texto del
+  cliente solo aparece citado y recortado). Puede revisarse en la comparación de alternativas.
+
+## D21 · Contrato de respuesta compartido
+
+- **Contexto.** La API (Fase 4) debe devolver exactamente el contrato del Anexo y reutilizar lo
+  que produce el motor.
+- **Decisión.** `novapedidos.contrato`: `RespuestaPedido`, `LineaPedido`, `Sustitucion`,
+  `Pendiente`, `EstadoPedido` y `MotivoRevision` (Pydantic, congelados, `extra="forbid"`). Los
+  montos son `Decimal` en Python y se serializan a JSON como número con 2 decimales
+  (`PlainSerializer`, `when_used="json"`; el esquema OpenAPI los muestra como `number`);
+  `fecha_entrega` como `AAAA-MM-DD` o `null`. `Pendiente` rechaza `credito_excedido`. El
+  contrato no importa el motor (sin ciclos). `armar_pedido` lanza `ErrorClienteInexistente`
+  (subclase de `LookupError`) para que la API responda 404.
+- **Alternativas.** `float` en el modelo (reintroduce el error binario, D14); devolver `None`
+  para cliente inexistente (oculta el error).
+- **Justificación / evidencia.** `test_serializacion_json_del_contrato` (orden y tipos de los
+  campos) y el oráculo compara `model_dump(mode="json")` con el `esperado` de los casos dev.
 
 ---
 

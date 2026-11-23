@@ -130,3 +130,30 @@
 
 ### Próxima sesión
 - Fase 3 (armado del pedido).
+
+---
+
+## Sesión 2026-11-22 — Fase 3 (inicio)
+**Fase:** 3 — Motor de reglas: armado del pedido
+**Estado al cerrar:** Fase 3 cerrada ✅ (subagente; verificada por la sesión principal)
+
+### Logrado
+- F3.1 `contrato.py` (respuesta del Anexo, compartida con la API) y `motor/modelos.py` (`InterpretacionResuelta`, `Mencion`: texto, resolucion sku|ambiguo|no_existe, cantidad, unidad venta|unidad_suelta|docena, accion agregar|corregir|quitar).
+- F3.2–F3.6 `motor/pedido.py`: `armar_pedido(cliente_id, fecha_hora, interpretacion, datos) -> RespuestaPedido`; `ErrorClienteInexistente` → 404.
+- F3.7 `motor/mensaje.py`: mensaje al cliente por plantilla (saludo por hora, sustituciones, pendientes sin prometer, fecha en español, total calculado).
+- F3.8 Oráculo 73/73 casos dev (12 tipos) + 62 pruebas sintéticas.
+
+### Verificación
+- pytest: 311 pasan · ruff check/format: ok.
+
+### Lo que falló
+- ruff I001 y E501 · resuelto. Riesgo de import circular contrato↔motor · evitado.
+
+### Capturas
+- No aplica (código puro).
+
+### Decisiones tomadas
+- D15–D21: estructura intermedia tolerante; cantidades ≤0; quitar/corregir; "lo de siempre" sin historial → pendiente `producto_ambiguo` con `opciones=[]` (revisar); pedido vacío → `fuera_de_alcance`; mensaje por plantilla; contrato compartido.
+
+### Próxima sesión
+- Fase 4 (API con intérprete falso). Fase 5: el LLM llena `InterpretacionResuelta` ("media docena" → 6 `unidad_suelta`).

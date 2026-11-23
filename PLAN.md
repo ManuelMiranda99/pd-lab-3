@@ -118,14 +118,14 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** dado un pedido "ya entendido" (menciones con sku/cantidad/unidad/acción), producir la respuesta completa del contrato sin LLM.
 **Requisito PDF:** políticas §2, §3, §4, §8; descripción del producto 1–3.
 
-- [ ] F3.1 Esquemas Pydantic internos: `Mencion` (texto, sku|opciones, cantidad, unidad, acción) y la respuesta del contrato.
-- [ ] F3.2 Conversión de unidades/docenas exacta, cantidad faltante = 1, `cantidad_no_convertible`.
-- [ ] F3.3 Sumar menciones repetidas, correcciones explícitas, quitar productos.
-- [ ] F3.4 "Lo de siempre": último pedido `entregado` (ignora cancelados), combinable con agregar/quitar.
-- [ ] F3.5 Agotados → sustituto (`sustituciones`) o `agotado_sin_sustituto`; ambiguos y no existentes → `pendientes`.
-- [ ] F3.6 Estado (`confirmado` / `requiere_revision` / `fuera_de_alcance`) y `motivos_revision` (sin duplicados, orden estable).
-- [ ] F3.7 Mensaje al cliente por plantilla determinista (fecha en español, sin precios distintos, "un asesor le confirmará").
-- [ ] F3.8 Prueba "oráculo": construir menciones a mano para ~15 casos dev de tipos distintos y verificar que la respuesta coincide con `esperado`.
+- [x] F3.1 Esquemas Pydantic internos: `Mencion` (texto, sku|opciones, cantidad, unidad, acción) y la respuesta del contrato.
+- [x] F3.2 Conversión de unidades/docenas exacta, cantidad faltante = 1, `cantidad_no_convertible`.
+- [x] F3.3 Sumar menciones repetidas, correcciones explícitas, quitar productos.
+- [x] F3.4 "Lo de siempre": último pedido `entregado` (ignora cancelados), combinable con agregar/quitar.
+- [x] F3.5 Agotados → sustituto (`sustituciones`) o `agotado_sin_sustituto`; ambiguos y no existentes → `pendientes`.
+- [x] F3.6 Estado (`confirmado` / `requiere_revision` / `fuera_de_alcance`) y `motivos_revision` (sin duplicados, orden estable).
+- [x] F3.7 Mensaje al cliente por plantilla determinista (fecha en español, sin precios distintos, "un asesor le confirmará").
+- [x] F3.8 Prueba "oráculo": construir menciones a mano para ~15 casos dev de tipos distintos y verificar que la respuesta coincide con `esperado`.
 
 **Verificación manual:** `uv run pytest tests/test_motor_pedido.py -v`; leer 3 mensajes al cliente generados.
 
