@@ -32,6 +32,11 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D19 | Pedido que queda vacío | Sin líneas ni pendientes (todo quitado, cantidades 0) → `fuera_de_alcance` |
 | D20 | Mensaje al cliente | Plantilla determinista con los datos ya calculados (sin LLM) |
 | D21 | Contrato compartido | `novapedidos.contrato` (Pydantic): montos `Decimal` → número de 2 decimales en JSON; `ErrorClienteInexistente` para el 404 |
+| D22 | Errores 404 y 422 | `{"error", "mensaje", "detalles":[{campo, mensaje, tipo}]}` en español; 422 nombra el campo y resume todos los problemas |
+| D23 | Fallos del intérprete y errores internos | 503 (`interprete_no_disponible`, `datos_no_disponibles`, `error_interno`), nunca 500 ni un pedido inventado |
+| D24 | `/health` | MLflow por `GET <uri>/health` (timeout 1 s, caché 5 s); también datos e intérprete; `degradado` + `motivo` |
+| D25 | Elección del intérprete | Protocolo `Interprete` inyectado; `INTERPRETE=llm` (defecto) o `falso`; sin LLM real → 503 claro |
+| D26 | Límites de la solicitud | `cliente_id` 1–64, 1–50 mensajes de 1–2000 caracteres (recortados); campos extra ignorados |
 
 ---
 
@@ -397,6 +402,117 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
   para cliente inexistente (oculta el error).
 - **Justificación / evidencia.** `test_serializacion_json_del_contrato` (orden y tipos de los
   campos) y el oráculo compara `model_dump(mode="json")` con el `esperado` de los casos dev.
+
+## D22 · Formato de los errores 404 y 422
+
+- **Contexto.** El Anexo pide 404 para un cliente inexistente y 422 "con un mensaje que explique
+  el motivo" para solicitudes inválidas. El 422 por defecto de FastAPI está en inglés
+  (`{"detail": [{"msg": "Field required", ...}]}`).
+- **Decisión.** Todas las respuestas de error usan
+  `{"error": <código>, "mensaje": <explicación en español>, "detalles": [...]}`
+  (`novapedidos.api.esquemas.RespuestaError`).
+  - 422 → `error = "solicitud_invalida"`; cada error de Pydantic se traduce
+    (`api/errores.py`) a `{campo, mensaje, tipo}`, con el campo legible (`mensajes[0]`,
+    `cuerpo`) y el `tipo` original de Pydantic; `mensaje` concatena todos los problemas, p. ej.
+    "Falta el campo obligatorio 'cliente_id'.", "El campo 'mensajes' no puede estar vacío: envíe
+    al menos un mensaje.", "El mensaje 2 de 'mensajes' está vacío.", el texto de
+    `ErrorFechaHora` para fechas mal formadas (D14) y "El cuerpo de la solicitud no es JSON
+    válido.". Cuerpo no JSON, lista en lugar de objeto y tipos incorrectos también son 422.
+  - 404 → `error = "cliente_no_encontrado"`, se verifica **antes** de llamar al intérprete (no
+    se gasta una llamada al LLM). Una ruta inexistente es 404 `ruta_no_encontrada`, y un método
+    no permitido es 405 `metodo_no_permitido`, con el mismo formato.
+- **Alternativas.** Dejar el `detail` de FastAPI (en inglés y poco claro para el tendero/asesor);
+  devolver solo el primer error (oculta otros problemas de la misma solicitud).
+- **Justificación / evidencia.** `tests/test_api.py` (16 casos 422 de campos/tipos/límites, 12
+  formatos de fecha, 4 cuerpos no JSON, varios errores juntos, 404 sin llamar al intérprete);
+  `evidencia/sesiones/2026-11-22_F4/respuestas_curl.txt`.
+
+## D23 · Fallos del intérprete y errores internos
+
+- **Contexto.** El LLM puede caerse, tardar o devolver algo inválido; la regla 9 de `CLAUDE.md`
+  prohíbe que una entrada termine en 500.
+- **Decisión.** **503** con el formato de D22, sin inventar un pedido:
+  - `interprete_no_disponible`: el intérprete lanzó `ErrorInterprete` (su mensaje se incluye),
+    cualquier otra excepción (mensaje genérico, sin filtrar detalles internos) o devolvió algo
+    que no es `InterpretacionResuelta`.
+  - `datos_no_disponibles`: no se pudieron cargar los parquet de `DATOS_DIR`.
+  - `error_interno`: excepción inesperada al armar el pedido (o en cualquier otra parte, por un
+    manejador global). Se registra con traza en el log.
+- **Alternativas.** Responder 200 `requiere_revision` "seguro" (el contrato exige que
+  `requiere_revision` venga con un pendiente o crédito excedido; un pendiente sintético sería
+  engañoso y el asesor recibiría un pedido vacío como si fuera real); 500 (prohibido por la
+  regla 9); 502/504 (más precisos para el LLM pero no para datos o errores propios).
+- **Justificación / evidencia.** 503 dice "reintente más tarde", que es lo correcto para un
+  proveedor externo caído. Pruebas `test_fallo_del_interprete_503_claro` (4 variantes),
+  `test_datos_no_disponibles_503_y_health_degradado`, `test_error_en_el_motor_no_es_500`.
+
+## D24 · Política de `/health`
+
+- **Contexto.** El Anexo: 200 con `estado = ok` o `degradado` + `motivo` cuando una dependencia
+  (MLflow) no está disponible; la API debe seguir respondiendo pedidos con MLflow caído.
+- **Decisión.** `GET /health` siempre responde 200 con `{"estado", "motivo"?, "dependencias"}`
+  (`motivo` solo si `degradado`; `dependencias` es diagnóstico adicional por dependencia):
+  - **MLflow**: `GET <MLFLOW_TRACKING_URI>/health` con **timeout de 1 s** y **caché de 5 s**
+    (`api/salud.py`, `MonitorMlflow`, con candado para no duplicar consultas). URI vacía →
+    `desactivado` (no degrada: MLflow se apagó a propósito); URI no HTTP (`file:`, `sqlite:`,
+    ruta) → `local` (no hay servidor que consultar; no degrada); error de red/HTTP → degradado
+    con el motivo (p. ej. "MLflow no responde (Connection refused)").
+  - **Datos**: si no cargan → degradado con el error de `ErrorDatos`.
+  - **Intérprete**: `InterpreteNoDisponible` (configuración inválida o LLM no implementado) →
+    degradado; intérprete LLM sin `OPENROUTER_API_KEY` → degradado; `falso` → ok.
+  - Varios problemas se unen con `"; "` en `motivo`.
+  `POST` no consulta MLflow (el gancho de trazas, D25, no puede romper la respuesta).
+- **Alternativas.** Responder 503 en `/health` cuando algo falla (el Anexo pide 200);
+  consultar MLflow en cada llamada (latencia de hasta 1 s por llamada con MLflow colgado); solo
+  chequear MLflow (oculta que no hay datos o clave, que impiden responder pedidos).
+- **Justificación / evidencia.** `test_health_*` (ok con un MLflow falso en un puerto local,
+  degradado con puerto cerrado en < 1.5 s y POST 200 a la vez, desactivado/local, sin clave,
+  datos que fallan), `test_monitor_mlflow_cachea_el_resultado`,
+  `test_monitor_mlflow_respeta_el_timeout`. Con el servidor real y MLflow apagado: 3.6 ms.
+
+## D25 · Interfaz e inyección del intérprete
+
+- **Contexto.** Las pruebas de la API no pueden depender del modelo (regla 8) y el intérprete
+  real (LangChain + OpenRouter) se construye después.
+- **Decisión.**
+  - `novapedidos.llm.interfaz.Interprete` (Protocol, `runtime_checkable`):
+    `interpretar(cliente_id: str, mensajes: list[str], fecha_hora: datetime) ->
+    InterpretacionResuelta`; los fallos se señalan con `ErrorInterprete`.
+  - `novapedidos.api.interpretes.InterpreteFalso`: tabla mensajes → interpretación (sin
+    mayúsculas ni espacios sobrantes), o una función, o un `por_defecto`; si no conoce los
+    mensajes lanza `ErrorInterprete` (503) en lugar de inventar. Registra `llamadas`.
+  - Elección: variable `INTERPRETE` (`llm` por defecto, o `falso`) en `Configuracion`;
+    `crear_interprete(config)` nunca lanza. `llm` importa
+    `novapedidos.llm.interprete.crear_interprete_llm(config)`; mientras ese módulo no exista
+    devuelve `InterpreteNoDisponible` → pedidos 503 con "use INTERPRETE=falso" y `/health`
+    degradado. `falso` usa una tabla de demostración con el ejemplo del Anexo y una consulta.
+  - En pruebas: `app.dependency_overrides[obtener_interprete]` (y `obtener_proveedor_datos`
+    para datos sintéticos), o `crear_app(config, interprete=..., registrador=...)`.
+  - Gancho de trazas: `api/trazas.py` (`RegistradorTrazas.registrar(RegistroSolicitud)`), por
+    defecto `RegistradorNulo`; se llama después de cada pedido (200, 404, 503) dentro de un
+    `try/except`.
+- **Alternativas.** Usar el falso por defecto cuando no hay LLM (el evaluador recibiría pedidos
+  inventados sin darse cuenta); fallar al arrancar (sin `/health` ni `/docs` para diagnosticar).
+- **Justificación / evidencia.** `test_interprete_por_variable_de_entorno`,
+  `test_interprete_llm_aun_no_implementado_responde_503_y_health_degradado`,
+  `test_gancho_de_trazas_recibe_cada_solicitud`, `test_registrador_que_falla_no_afecta_la_respuesta`.
+
+## D26 · Límites de la solicitud
+
+- **Contexto.** Hay que evitar abusos (costo del LLM, prompts gigantes) sin rechazar
+  conversaciones reales de WhatsApp.
+- **Decisión.** `cliente_id`: texto de 1 a 64 caracteres, sin espacios al inicio/fin (se
+  recortan). `mensajes`: lista de 1 a **50** textos; cada uno de 1 a **2000** caracteres después
+  de recortar espacios (un mensaje solo con espacios cuenta como vacío). `fecha_hora`: estricta
+  `AAAA-MM-DDTHH:MM` (D14). **Campos extra se ignoran** (`extra="ignore"`): el evaluador puede
+  mandar metadatos sin recibir un 422 inesperado. Sin coerción de tipos: un número en
+  `cliente_id` o en `mensajes` es 422.
+- **Alternativas.** Sin límites (riesgo de costo); límites menores (los casos dev tienen como
+  máximo 3 mensajes y 184 caracteres por mensaje, pero un audio transcrito puede ser largo);
+  prohibir campos extra (`forbid`).
+- **Justificación / evidencia.** Casos `demasiados_mensajes`, `mensaje_muy_largo`,
+  `mensaje_solo_espacios`, `cliente_id_numero` y
+  `test_campos_extra_se_ignoran_y_cliente_id_se_recorta` en `tests/test_api.py`.
 
 ---
 

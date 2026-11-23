@@ -133,10 +133,10 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** el contrato del Anexo funcionando de punta a punta sin LLM.
 **Requisito PDF:** §2 (contrato, validación, pruebas sin modelo), Anexo.
 
-- [ ] F4.1 `POST /v1/pedidos/interpretar` con validación: campos faltantes, `mensajes` vacío, fecha mal formada → 422 con motivo claro; cliente inexistente → 404.
-- [ ] F4.2 `GET /health` (`ok` / `degradado` + `motivo`), con chequeo de MLflow con timeout corto y caché.
-- [ ] F4.3 Inyección de dependencias: intérprete `FakeInterprete` en tests.
-- [ ] F4.4 Tests de contrato (`tests/test_api.py`): 200, 404, 422 (varios), forma exacta de la respuesta, `fuera_de_alcance` con `fecha_entrega: null`.
+- [x] F4.1 `POST /v1/pedidos/interpretar` con validación: campos faltantes, `mensajes` vacío, fecha mal formada → 422 con motivo claro; cliente inexistente → 404.
+- [x] F4.2 `GET /health` (`ok` / `degradado` + `motivo`), con chequeo de MLflow con timeout corto y caché.
+- [x] F4.3 Inyección de dependencias: intérprete `FakeInterprete` en tests.
+- [x] F4.4 Tests de contrato (`tests/test_api.py`): 200, 404, 422 (varios), forma exacta de la respuesta, `fuera_de_alcance` con `fecha_entrega: null`.
 
 **Verificación manual:** `uv run uvicorn …` y abrir `http://localhost:8000/docs`; probar el ejemplo del Anexo (con intérprete falso) y una solicitud inválida. Captura de `/docs`.
 

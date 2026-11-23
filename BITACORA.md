@@ -157,3 +157,35 @@
 
 ### Próxima sesión
 - Fase 4 (API con intérprete falso). Fase 5: el LLM llena `InterpretacionResuelta` ("media docena" → 6 `unidad_suelta`).
+
+---
+
+## Sesión 2026-11-22 — Fase 4 (inicio)
+**Fase:** 4 — API FastAPI con intérprete falso
+**Estado al cerrar:** Fase 4 cerrada ✅ (subagente; verificada por la sesión principal)
+
+### Logrado
+- F4.1 `api/main.py` (`crear_app`, `app`), `api/esquemas.py`, `api/errores.py`: 422 en español con detalles por campo, 404 `cliente_no_encontrado`, 503 ante fallos (nunca 500).
+- F4.2 `api/salud.py`: `/health` con chequeo de MLflow (timeout 1 s, caché 5 s), datos e intérprete; campo extra `dependencias`.
+- F4.3 `llm/interfaz.py` (`Interprete`, `ErrorInterprete`), `api/interpretes.py` (`InterpreteFalso`), `INTERPRETE=llm|falso`, gancho `api/trazas.py` para MLflow.
+- F4.4 `tests/test_api.py`: 61 pruebas (contrato exacto, Anexo con datos sintéticos y reales, 404, 32 variantes de 422, 503, health degradado < 1.5 s con POST respondiendo).
+
+### Verificación
+- pytest: 372 pasan · ruff check/format: ok.
+- Servidor real con `INTERPRETE=falso`: Anexo → total 840.0, fecha 2026-11-26, pendiente aceite [A06, A07].
+
+### Lo que falló
+- `curl localhost:8000` respondía otro servidor: el contenedor Docker `sgn-control-gateway-1` ocupa el puerto 8000 · rodeado con `127.0.0.1`; **chocará con la Fase 9** (habrá que pararlo).
+- ruff E501 y 422 de JSON inválido con campo "[0]" · resueltos.
+
+### Capturas
+- evidencia/sesiones/2026-11-22_F4/docs.png — Swagger de la API.
+- evidencia/sesiones/2026-11-22_F4/health_degradado.png — `/health` con MLflow caído.
+- evidencia/sesiones/2026-11-22_F4/respuestas_curl.txt — 200, 422, 404, fuera_de_alcance, health.
+
+### Decisiones tomadas
+- D22–D26 (formato de errores, 503 ante fallos, política de /health, elección de intérprete, límites 64/50/2000).
+- Duda abierta: montos salen `240.0` (mismo número que `240.00`).
+
+### Próxima sesión
+- Fase 5 (intérprete LangChain + OpenRouter) implementando `crear_interprete_llm(config)`.

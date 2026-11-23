@@ -21,6 +21,9 @@ class Configuracion(BaseSettings):
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
     mlflow_tracking_uri: str = "http://localhost:5000"
     datos_dir: Path = Path("datos")
+    #: Intérprete de mensajes que usa la API: `llm` (LangChain + OpenRouter) o `falso`
+    #: (tabla fija para demos y pruebas). Ver `DECISIONES.md` D25.
+    interprete: str = "llm"
 
     @property
     def tiene_clave(self) -> bool:
