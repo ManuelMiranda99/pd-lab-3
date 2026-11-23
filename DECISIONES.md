@@ -52,6 +52,9 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D39 | Políticas en casos fuera del catálogo | Marca no vendida → `producto_no_existe`; "caja y media"/"medio fardo" → `cantidad_no_convertible`; "una docena de cajas" = 12 cajas; condicional y reclamo + pedido = pedido; "regalía" sin producto no agrega nada; solo productos no vendidos = `requiere_revision` |
 | D40 | Mejoras de la Fase 7 | Prompt (marcas no vendidas, reclamos, pedidos solo de no vendidos, cancelar todo, presentación en letras) y resolución (vacías en el anclaje, docena de empaques, medias unidades, "seiscientos" = 600) |
 | D41 | Latencia de cola | Causa medida: tiempo de generación de Azure (no reintentos de red) + doble llamada del filtro D32; mitigación: sanear antes de llamar cuando se pide ignorar las instrucciones |
+| D42 | Trazas de MLflow por solicitud | Tramo raíz `interpretar_pedido` + `interprete_llm` (autolog de LangChain) + `resolucion_productos` + `motor_armar_pedido`; etiquetas de modelo, tokens, costo, latencias, estado HTTP; experimento `novapedidos-api` |
+| D43 | Tolerancia a fallos de MLflow | Ninguna llamada de red en el hilo de la solicitud: conexión en hilo de fondo con reintentos, destino por id, exportación asíncrona acotada (timeout 3 s, 1 reintento, cola 200); `/health` con caché de 1 s |
+| D44 | Evaluación en MLflow | `eval/correr.py --mlflow`: un run por corrida (parámetros, ~60 métricas, artefactos, tablas) + `mlflow.genai.evaluate` con los calificadores como scorers sobre salidas ya calculadas (costo cero) |
 
 ---
 
@@ -944,6 +947,140 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
   `test_quitar_instrucciones_conserva_la_clausula_del_pedido`. Riesgo: una oración que mezcle
   el pedido con una manipulación sin separador (", y, pero") se pierde completa (antes pasaba lo
   mismo, pero solo tras el rechazo del filtro).
+
+## D42 · Trazas de cada solicitud en MLflow
+
+- **Contexto.** El PDF pide "trazas de las solicitudes en MLflow"; deben servir para depurar un
+  pedido (qué entendió el modelo, cómo se resolvió, qué calculó el motor) y para ver costo y
+  latencia, sin filtrar la clave.
+- **Decisión.**
+  - **Tracing nativo de MLflow 3** (no runs por solicitud): un tramo raíz `interpretar_pedido`
+    (CHAIN; entrada = la solicitud, salida = la respuesta o `{codigo_http, error}`) que abre la
+    API (`RegistradorMlflow.abrir_traza`) y dentro: `interprete_llm` (CHAIN; atributos
+    `llm.*` con `MetadatosLlamada`: modelo, latencia, tokens entrada/salida/caché, costo USD,
+    `id_generacion`, `filtro_contenido`, `saneado_previo`), su hijo `ChatOpenAI` y los
+    `Runnable*` de `with_structured_output` vía **`mlflow.langchain.autolog()`** (prompt,
+    salida estructurada, uso de tokens y costo estimado por MLflow), `resolucion_productos`
+    (PARSER; menciones del LLM → resueltas) y `motor_armar_pedido` (TOOL).
+  - Etiquetas de la traza (filtrables en la UI): `servicio`, `http.codigo`,
+    `latencia_total_s`, `cliente_id`, `modelo`, `pedido.estado`, `pedido.total`,
+    `pedido.motivos_revision`, `error` y `llm.*`. Estado `ERROR` si la API respondió 503.
+  - Los pasos marcan tramos con `novapedidos.trazado.tramo()`, que **no hace nada** (ni
+    importa `mlflow`) si no hay una traza activa: `llm/` y `motor/` no dependen de MLflow, las
+    pruebas y la evaluación sin `--mlflow` no cambian, y cualquier excepción de MLflow se
+    registra en el log y se ignora.
+  - Experimento `novapedidos-api` (`MLFLOW_EXPERIMENTO_API`); `MLFLOW_TRAZAS=false` o
+    `MLFLOW_TRACKING_URI` vacía → `RegistradorNulo`.
+  - Sin secretos: el autolog registra `invocation_params` (modelo, temperatura, esquema) pero no
+    la clave ni encabezados de autorización; verificado buscando la clave, `sk-or`,
+    `Authorization` y `api_key` en el JSON completo de una traza real (ninguno aparece).
+- **Alternativas.** Construir la traza después de responder con `MlflowClient` y tiempos
+  explícitos (aún más desacoplado, pero se pierde el tramo real de LangChain con el prompt y
+  la salida); un run de MLflow por solicitud (lento, síncrono y no es para lo que sirve);
+  solo autolog (sin solicitud, resolución ni motor, ni costo de OpenRouter).
+- **Justificación / evidencia.** Traza real: 15 tramos, `interpretar_pedido` 1.79 s ⊃
+  `interprete_llm` 1.79 s ⊃ `ChatOpenAI` 1.77 s; resolución 1.2 ms; motor 0.6 ms
+  (`evidencia/mlflow/traza_solicitud_spans.png`). Pruebas
+  `tests/test_trazas_mlflow.py::test_traza_de_la_solicitud_en_un_almacen_local` (sqlite
+  temporal: tramos, entradas/salidas y etiquetas de un 200 y un 404),
+  `test_tramo_sin_traza_activa_no_hace_nada`, `test_tramo_propaga_las_excepciones_del_codigo`.
+  Riesgo: los `Runnable*` internos de LangChain agregan ~10 tramos de ruido; se aceptan porque
+  muestran el parseo estructurado.
+
+## D43 · Tolerancia a fallos de MLflow (caído, colgado, ausente al arrancar)
+
+- **Contexto.** Regla 6: con MLflow caído la API sigue respondiendo y `/health` lo refleja; el
+  evaluador interrumpe MLflow y mide latencia. En MLflow 3.18 los puntos síncronos peligrosos
+  son: resolver el experimento por nombre al abrir una traza (`MLFLOW_EXPERIMENT_NAME` /
+  `set_experiment` llaman al servidor), `set_experiment` al arrancar, y los reintentos HTTP
+  por defecto (7 reintentos con *backoff* y timeout de 120 s por llamada).
+- **Decisión.**
+  - **Ninguna llamada de red en el hilo de la solicitud.** `RegistradorMlflow` se conecta en un
+    hilo de fondo (`novapedidos-mlflow-conexion`): busca o crea el experimento con un
+    `MlflowClient` propio y, solo si responde, fija la URI global, el destino con el **id**
+    (`mlflow.tracing.set_destination(MlflowExperimentLocation(id))`, así abrir un tramo no
+    consulta al servidor) y activa el autolog. Mientras no conecta reintenta cada 5 s y las
+    solicitudes no se trazan (`/health` → `"trazas": "conectando"`). La API arranca aunque
+    MLflow no exista y se conecta sola cuando aparece.
+  - **Exportación asíncrona y acotada** (valores por defecto con `os.environ.setdefault`; el
+    entorno manda): `MLFLOW_ENABLE_ASYNC_TRACE_LOGGING=true` (BatchSpanProcessor + cola de
+    MLflow en hilos de fondo), `MLFLOW_ASYNC_TRACE_LOGGING_MAX_QUEUE_SIZE=200` (si se llena se
+    descartan trazas, no se acumula memoria), `..._MAX_WORKERS=4`,
+    `MLFLOW_HTTP_REQUEST_TIMEOUT=3`, `MLFLOW_HTTP_REQUEST_MAX_RETRIES=1`,
+    `BACKOFF_FACTOR=1`, `BACKOFF_JITTER=0.5`. Con MLflow caído las trazas de ese lapso se
+    pierden (diseño: no se bloquea ni se guarda en disco); al volver, las nuevas se registran
+    sin reiniciar la API.
+  - Apertura y cierre de la traza envueltos en `try/except` (`_traza_segura`), igual que
+    `registrar` (D25).
+  - **`/health`: caché de MLflow de 5 s → 1 s** (timeout 1 s, sin cambios): una caída se ve en
+    ≤ ~1 s y `/health` tarda ≤ ~1 s aun con MLflow colgado; MLflow recibe como mucho un
+    `/health` por segundo.
+- **Alternativas.** `MLFLOW_EXPERIMENT_NAME` en el entorno (cada traza nueva consultaría al
+  servidor en el hilo de la solicitud); `set_experiment` en el arranque (la API no arrancaría o
+  tardaría ~minutos con MLflow caído); reintentos por defecto (hilos de exportación
+  ocupados minutos); apagar el trazado mientras `/health` diga degradado (más estado global
+  sin beneficio medible: la exportación ya no bloquea); vigía en segundo plano para `/health`
+  (respuesta siempre instantánea, pero otro hilo permanente; la caché de 1 s basta).
+- **Justificación / evidencia.** `evidencia/sesiones/2026-11-23_F8/resiliencia.txt`
+  (`scripts/probar_resiliencia_mlflow.py`, MLflow real en 5001, API en 8001):
+  - Intérprete falso (aísla la sobrecarga; 20 POST por fase): p50/máx **4/23 ms** sin MLflow
+    desde el arranque, **3/48 ms** arriba, **3/62 ms** muerto, **3/6 ms** colgado (SIGSTOP),
+    **9/32 ms** al reanudar. Ningún error.
+  - Intérprete LLM (gpt-4.1-nano, 8 POST por fase): p50 1.89 / 1.85 / 1.73 / 1.84 / 1.75 s
+    (apagado / arriba / muerto / colgado / reanudado): la variación es del proveedor.
+  - `/health`: `degradado` 2–3 ms con el puerto cerrado; con MLflow colgado pasa a
+    `degradado` **1.01 s** después de congelarlo (la consulta que corta por timeout tarda
+    ~1 s; las siguientes, dentro de la caché, 1–3 ms); vuelve a `ok` 0.98–1.20 s después de
+    reanudarlo. Al arrancar MLflow, `ok` en ~10 s (lo que tarda en levantar el servidor).
+  - Trazas: 8/8 y 20/20 visibles en MLflow 1.3–2.8 s después, antes y después de la caída,
+    sin reiniciar la API.
+  - Apagar la API (SIGTERM) con MLflow colgado y 30 trazas en cola: 0.4 s.
+  - Pruebas sin servidor real (`tests/test_trazas_mlflow.py`): puerto cerrado y socket que
+    nunca responde (5 POST < 0.5 s cada uno, `/health` degradado < 1.5 s), **servidor falso
+    que responde la conexión y luego se cuelga en la exportación** (10 POST < 0.5 s con las
+    trazas creadas y la exportación colgada), registrador que lanza al abrir la traza → 200.
+
+## D44 · Evaluación en MLflow
+
+- **Contexto.** El PDF pide evaluaciones reproducibles en MLflow y la comparación de calidad,
+  latencia y costo entre alternativas (Fase 10); la evaluación local (D35) ya produce
+  `resultados.jsonl`, `resumen.json` y `reporte.txt` y tiene el punto de extensión
+  `observadores`.
+- **Decisión.** `uv run python eval/correr.py <archivos…> --mlflow [--variante X]
+  [--modelo M] [--mlflow-uri U] [--mlflow-experimento E] [--mlflow-sin-genai]` agrega
+  `ObservadorMlflow` (`novapedidos.evaluacion.mlflow_obs`):
+  - Antes de llamar al modelo verifica MLflow y crea el experimento (si no responde, sale con
+    código 2 sin gastar). Un fallo de MLflow al final no pierde la corrida local.
+  - **Un run por corrida** en `novapedidos-evaluacion` (`MLFLOW_EXPERIMENTO_EVAL`), nombre =
+    `--marca`. Parámetros: modelo, variante, ejecutor (local/http), URL, resolución
+    post-LLM, conjuntos y archivos, filtros, concurrencia, umbral de latencia, casos,
+    `git_commit` y `git_cambios_sin_commit`. Etiquetas `tipo_run`, `modelo`, `variante`.
+  - Métricas (≈ 60): `exactitud`, `exactos`, `errores`, `exactitud.conjunto.<archivo>`,
+    `exactitud.tipo.<tipo>`, `calificador.<nombre>` (caso_exacto, estado, lineas, total,
+    fecha_entrega, motivos_revision, pendientes, sustituciones, lineas_estricto,
+    integridad_precios, mensaje_cliente, latencia), `latencia_{p50,p95,max,media}_s` y
+    `latencia_llm_*`, `tokens_*`, `costo_total_usd`, `costo_por_caso_usd`, `duracion_s`.
+  - Artefactos: los tres archivos de la corrida y tablas `casos.json` (una fila por caso con
+    cada calificación, latencia, costo y el detalle de lo que falló) y `fallos.json`.
+  - **`mlflow.genai.evaluate` sin `predict_fn`**: filas `{inputs: solicitud, outputs:
+    respuesta ya obtenida, expectations: {esperado}, tags: caso_id/tipo/conjunto}` y los
+    calificadores como `@scorer` (mismo código que la evaluación local, vía
+    `calificar_ejecucion`; devuelven `Feedback` con el detalle como *rationale*). No vuelve a
+    llamar al modelo (costo cero) y la UI muestra cada caso con su traza, sus 11
+    calificaciones y el agregado `<scorer>/mean`.
+- **Alternativas.** `mlflow.genai.evaluate` con `predict_fn` (duplicaría el ejecutor y la
+  concurrencia de D35 y, si se corre además el CLI, el costo); solo runs con métricas (sin
+  vista por caso); la latencia como scorer (no está en la respuesta; queda como métrica).
+  Las trazas reales de LangChain de cada caso de la evaluación no se guardan (las del API sí):
+  la traza de cada fila de `genai.evaluate` tiene la entrada, la salida y las calificaciones.
+- **Justificación / evidencia.** Corrida completa con gpt-4.1-nano (dev + variantes + control
+  + propios, 177 casos, 4 hilos): **176/177 = 99.4 %** (dev 84/84, variantes 24/24, control
+  14/14, propios 54/55: P028, el modelo tomó "media docena de kola de 3 litros" como 15 y como
+  quitar a la vez), latencia p50 1.63 s · p95 2.73 s · máx 7.63 s, costo USD 0.0445 (USD
+  0.00025 por caso); 2 casos exactos sobre el umbral de 5 s (D040 7.6 s, W01 7.5 s, picos del
+  proveedor, D41). Run `20261123_f8_nano_completa` (`evidencia/mlflow/`,
+  `evidencia/sesiones/2026-11-23_F8/eval/`). Pruebas `tests/test_evaluacion_mlflow.py` (sqlite
+  temporal: métricas, parámetros, artefactos, tablas y evaluación con los 11 scorers).
 
 ---
 

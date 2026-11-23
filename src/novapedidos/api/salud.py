@@ -1,7 +1,8 @@
 """Chequeo de dependencias para `GET /health` (`DECISIONES.md` D24).
 
-MLflow se consulta con `GET <MLFLOW_TRACKING_URI>/health`, timeout de 1 s y caché de 5 s, para
-que `/health` responda rápido aunque MLflow esté caído y no se golpee MLflow en cada llamada.
+MLflow se consulta con `GET <MLFLOW_TRACKING_URI>/health`, timeout de 1 s y caché de 1 s
+(D24, ajustado en D43), para que `/health` responda en ≤ 1 s aunque MLflow esté colgado, refleje
+una caída en ~1 s y no se golpee MLflow más de una vez por segundo.
 """
 
 from __future__ import annotations
@@ -15,7 +16,7 @@ from dataclasses import dataclass
 from urllib.parse import urlparse
 
 TIMEOUT_MLFLOW_S = 1.0
-CACHE_MLFLOW_S = 5.0
+CACHE_MLFLOW_S = 1.0
 
 
 @dataclass(frozen=True, slots=True)

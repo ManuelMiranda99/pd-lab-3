@@ -7,7 +7,8 @@ Puntos de inyección (sobreescribibles con `app.dependency_overrides` en las pru
 - `obtener_interprete` → `Interprete` (por defecto, según `INTERPRETE`; D25).
 - `obtener_proveedor_datos` → función sin argumentos que devuelve `Datos` (por defecto, los
   parquet de `DATOS_DIR`, cargados una vez).
-- `obtener_registrador` → `RegistradorTrazas` (por defecto no registra; gancho para MLflow).
+- `obtener_registrador` → `RegistradorTrazas` (por defecto `RegistradorMlflow` si hay
+  `MLFLOW_TRACKING_URI`; D42–D43).
 
 Códigos (D22–D24): 200 pedido · 404 cliente inexistente · 422 solicitud inválida · 503
 intérprete, datos o error interno (nunca un 500 crudo).
@@ -16,9 +17,10 @@ intérprete, datos o error interno (nunca un 500 crudo).
 from __future__ import annotations
 
 import logging
+import sys
 import time
-from collections.abc import AsyncIterator, Callable
-from contextlib import asynccontextmanager
+from collections.abc import AsyncIterator, Callable, Iterator
+from contextlib import asynccontextmanager, contextmanager
 from functools import lru_cache
 from pathlib import Path
 
@@ -31,12 +33,18 @@ from novapedidos.api.errores import manejar_http, manejar_validacion, respuesta_
 from novapedidos.api.esquemas import RespuestaError, RespuestaSalud, SolicitudPedido
 from novapedidos.api.interpretes import InterpreteFalso, InterpreteNoDisponible, crear_interprete
 from novapedidos.api.salud import MonitorMlflow
-from novapedidos.api.trazas import RegistradorNulo, RegistradorTrazas, RegistroSolicitud
+from novapedidos.api.trazas import (
+    RegistradorMlflow,
+    RegistradorTrazas,
+    RegistroSolicitud,
+    crear_registrador,
+)
 from novapedidos.config import Configuracion, obtener_configuracion
 from novapedidos.contrato import RespuestaPedido
 from novapedidos.datos import Datos, ErrorDatos, cargar_datos
 from novapedidos.llm.interfaz import ErrorInterprete, Interprete
 from novapedidos.motor import ErrorClienteInexistente, InterpretacionResuelta, armar_pedido
+from novapedidos.trazado import tramo
 
 logger = logging.getLogger("novapedidos.api")
 
@@ -86,6 +94,32 @@ def _registrar(registrador: RegistradorTrazas, registro: RegistroSolicitud) -> N
         logger.warning("No se pudo registrar la traza de la solicitud", exc_info=True)
 
 
+@contextmanager
+def _traza_segura(registrador: RegistradorTrazas, solicitud: SolicitudPedido) -> Iterator[None]:
+    """Abre la traza de la solicitud si el registrador sabe hacerlo; nunca la rompe."""
+    administrador = None
+    try:
+        abrir = getattr(registrador, "abrir_traza", None)
+        if abrir is not None:
+            administrador = abrir(solicitud)
+            administrador.__enter__()
+    except Exception:  # noqa: BLE001
+        logger.warning("No se pudo abrir la traza de la solicitud", exc_info=True)
+        administrador = None
+    info: tuple = (None, None, None)
+    try:
+        yield
+    except BaseException:
+        info = sys.exc_info()
+        raise
+    finally:
+        if administrador is not None:
+            try:
+                administrador.__exit__(*info)
+            except Exception:  # noqa: BLE001
+                logger.warning("No se pudo cerrar la traza de la solicitud", exc_info=True)
+
+
 _RESPUESTAS_ERROR = {
     404: {"model": RespuestaError, "description": "Cliente inexistente."},
     422: {"model": RespuestaError, "description": "Solicitud inválida (con el motivo)."},
@@ -129,7 +163,12 @@ def crear_app(
     )
     app.state.configuracion = config
     app.state.interprete = interprete if interprete is not None else crear_interprete(config)
-    app.state.registrador = registrador or RegistradorNulo()
+    app.state.registrador = registrador or crear_registrador(
+        config.mlflow_tracking_uri,
+        config.mlflow_experimento_api,
+        modelo=config.openrouter_model if config.interprete.strip().lower() == "llm" else "",
+        activo=config.mlflow_trazas,
+    )
     app.state.monitor_mlflow = MonitorMlflow(config.mlflow_tracking_uri)
 
     app.add_exception_handler(RequestValidationError, manejar_validacion)
@@ -179,59 +218,65 @@ def crear_app(
             assert error is not None
             return respuesta_error(codigo, error, mensaje)
 
-        try:
-            datos = proveedor_datos()
-        except Exception as exc:  # noqa: BLE001
-            logger.error("Datos no disponibles: %s", exc)
-            return terminar(
-                503,
-                error="datos_no_disponibles",
-                mensaje="Los datos del catálogo no están disponibles (revise DATOS_DIR).",
-            )
-
-        no_encontrado = f"No existe un cliente con cliente_id '{solicitud.cliente_id}'."
-        if datos.cliente(solicitud.cliente_id) is None:
-            return terminar(404, error="cliente_no_encontrado", mensaje=no_encontrado)
-
-        try:
-            interpretacion = interprete.interpretar(
-                solicitud.cliente_id, list(solicitud.mensajes), solicitud.fecha_hora
-            )
-            if not isinstance(interpretacion, InterpretacionResuelta):
-                raise ErrorInterprete(
-                    f"El intérprete devolvió {type(interpretacion).__name__}, "
-                    "no una InterpretacionResuelta."
+        with _traza_segura(registrador, solicitud):
+            try:
+                datos = proveedor_datos()
+            except Exception as exc:  # noqa: BLE001
+                logger.error("Datos no disponibles: %s", exc)
+                return terminar(
+                    503,
+                    error="datos_no_disponibles",
+                    mensaje="Los datos del catálogo no están disponibles (revise DATOS_DIR).",
                 )
-        except ErrorInterprete as exc:
-            logger.warning("Fallo del intérprete: %s", exc)
-            return terminar(
-                503,
-                error="interprete_no_disponible",
-                mensaje=f"No se pudieron interpretar los mensajes: {exc}",
-            )
-        except Exception:  # noqa: BLE001
-            logger.exception("Error inesperado del intérprete")
-            return terminar(
-                503,
-                error="interprete_no_disponible",
-                mensaje="No se pudieron interpretar los mensajes por un error del intérprete; "
-                "intente de nuevo más tarde.",
-            )
 
-        try:
-            respuesta = armar_pedido(
-                solicitud.cliente_id, solicitud.fecha_hora, interpretacion, datos
-            )
-        except ErrorClienteInexistente:
-            return terminar(404, error="cliente_no_encontrado", mensaje=no_encontrado)
-        except Exception:  # noqa: BLE001
-            logger.exception("Error inesperado al armar el pedido")
-            return terminar(
-                503,
-                error="error_interno",
-                mensaje="Error interno al armar el pedido; intente de nuevo más tarde.",
-            )
-        return terminar(200, respuesta=respuesta)
+            no_encontrado = f"No existe un cliente con cliente_id '{solicitud.cliente_id}'."
+            if datos.cliente(solicitud.cliente_id) is None:
+                return terminar(404, error="cliente_no_encontrado", mensaje=no_encontrado)
+
+            try:
+                interpretacion = interprete.interpretar(
+                    solicitud.cliente_id, list(solicitud.mensajes), solicitud.fecha_hora
+                )
+                if not isinstance(interpretacion, InterpretacionResuelta):
+                    raise ErrorInterprete(
+                        f"El intérprete devolvió {type(interpretacion).__name__}, "
+                        "no una InterpretacionResuelta."
+                    )
+            except ErrorInterprete as exc:
+                logger.warning("Fallo del intérprete: %s", exc)
+                return terminar(
+                    503,
+                    error="interprete_no_disponible",
+                    mensaje=f"No se pudieron interpretar los mensajes: {exc}",
+                )
+            except Exception:  # noqa: BLE001
+                logger.exception("Error inesperado del intérprete")
+                return terminar(
+                    503,
+                    error="interprete_no_disponible",
+                    mensaje="No se pudieron interpretar los mensajes por un error del intérprete; "
+                    "intente de nuevo más tarde.",
+                )
+
+            try:
+                with tramo(
+                    "motor_armar_pedido", "TOOL", lambda: interpretacion.model_dump(mode="json")
+                ) as t:
+                    respuesta = armar_pedido(
+                        solicitud.cliente_id, solicitud.fecha_hora, interpretacion, datos
+                    )
+                    if t is not None:
+                        t.salidas(respuesta.model_dump(mode="json"))
+            except ErrorClienteInexistente:
+                return terminar(404, error="cliente_no_encontrado", mensaje=no_encontrado)
+            except Exception:  # noqa: BLE001
+                logger.exception("Error inesperado al armar el pedido")
+                return terminar(
+                    503,
+                    error="error_interno",
+                    mensaje="Error interno al armar el pedido; intente de nuevo más tarde.",
+                )
+            return terminar(200, respuesta=respuesta)
 
     @app.get(
         "/health",
@@ -253,6 +298,11 @@ def crear_app(
         dependencias["mlflow"] = mlflow.detalle
         if not mlflow.disponible:
             motivos.append(mlflow.detalle)
+        registrador = request.app.state.registrador
+        if isinstance(registrador, RegistradorMlflow):
+            # Diagnóstico (no degrada por sí solo): las trazas se activan solas cuando MLflow
+            # responde (D43).
+            dependencias["trazas"] = "activas" if registrador.listo else "conectando"
 
         try:
             proveedor_datos()

@@ -8,6 +8,8 @@ Ejemplos (desde la raíz del repo):
     uv run python eval/correr.py --modelo openai/gpt-4.1-mini --marca mini_dev
     uv run python eval/correr.py --ids D003 D082 --concurrencia 1
     uv run python eval/correr.py --tipos ambiguo correccion --sin-resolucion
+    uv run python eval/correr.py ejemplos/mensajes_dev.jsonl eval/casos_*.jsonl --mlflow \
+        --variante base                                            # registra la corrida en MLflow
 
 Guarda `eval/resultados/<marca>/{resultados.jsonl, resumen.json, reporte.txt}` e imprime el
 reporte. Nunca imprime la clave de OpenRouter. Código de salida 0 si la corrida terminó (aunque
@@ -59,6 +61,21 @@ def construir_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--timeout", type=float, default=60.0, help="timeout HTTP por caso (s)")
     p.add_argument("--silencioso", action="store_true", help="sin progreso por caso")
+    p.add_argument(
+        "--mlflow", action="store_true", help="registrar la corrida como run de MLflow (D44)"
+    )
+    p.add_argument("--mlflow-uri", help="tracking URI (def. MLFLOW_TRACKING_URI)")
+    p.add_argument("--mlflow-experimento", help="experimento (def. MLFLOW_EXPERIMENTO_EVAL)")
+    p.add_argument(
+        "--mlflow-sin-genai",
+        action="store_true",
+        help="no correr mlflow.genai.evaluate (solo métricas, tablas y artefactos)",
+    )
+    p.add_argument(
+        "--variante",
+        default="base",
+        help="nombre de la alternativa evaluada (parámetro del run; p. ej. prompt o arquitectura)",
+    )
     return p
 
 
@@ -100,6 +117,36 @@ def main(argv: list[str] | None = None, observadores: tuple[Any, ...] = ()) -> i
         etiqueta = ejecutor.modelo.split("/")[-1] + ("_sinres" if args.sin_resolucion else "")
     marca = args.marca or marca_por_defecto(etiqueta)
 
+    observadores = tuple(observadores)
+    observador_mlflow = None
+    if args.mlflow:
+        from novapedidos.evaluacion.mlflow_obs import ObservadorMlflow
+
+        uri = args.mlflow_uri or config.mlflow_tracking_uri
+        observador_mlflow = ObservadorMlflow(
+            uri,
+            args.mlflow_experimento or config.mlflow_experimento_eval,
+            datos,
+            parametros={
+                "variante": args.variante,
+                "ejecutor": "http" if args.url else "local",
+                "url": args.url or "",
+                "archivos": ",".join(str(a) for a in args.archivos),
+                "filtros": " ".join(
+                    f"{n}={v}"
+                    for n, v in (("ids", args.ids), ("tipos", args.tipos), ("limite", args.limite))
+                    if v
+                ),
+            },
+            genai=not args.mlflow_sin_genai,
+        )
+        try:
+            observador_mlflow.verificar()  # antes de gastar en el modelo
+        except Exception as exc:  # noqa: BLE001
+            print(f"MLflow no disponible en {uri}: {type(exc).__name__}: {exc}", file=sys.stderr)
+            return 2
+        observadores = (*observadores, observador_mlflow)
+
     def avanzar(hechos: int, total: int, r: dict[str, Any]) -> None:
         if args.silencioso:
             return
@@ -128,12 +175,21 @@ def main(argv: list[str] | None = None, observadores: tuple[Any, ...] = ()) -> i
     reporte = guardar_resultados(directorio, resultados, resumen)
     for obs in observadores:
         final = getattr(obs, "al_final", None)
-        if final is not None:
+        if final is None:
+            continue
+        try:
             final(resumen, resultados, directorio)
+        except Exception as exc:  # noqa: BLE001 - la corrida local ya quedó guardada
+            print(f"El observador {obs!r} falló: {type(exc).__name__}: {exc}", file=sys.stderr)
     if isinstance(ejecutor, EjecutorHTTP):
         ejecutor.cerrar()
     print(reporte)
     print(f"Resultados en {directorio}/", file=sys.stderr)
+    if observador_mlflow is not None and observador_mlflow.run_id:
+        print(
+            f"Run de MLflow: {observador_mlflow.url_run() or observador_mlflow.run_id}",
+            file=sys.stderr,
+        )
     return 0
 
 

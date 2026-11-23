@@ -177,10 +177,10 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** cada solicitud trazada y las evaluaciones reproducibles en MLflow.
 **Requisito PDF:** §3, descripción 5, §4 (MLflow caído).
 
-- [ ] F8.1 Trazas: `mlflow.langchain.autolog()` + span propio por solicitud (entrada, salida, latencia, tokens, costo).
-- [ ] F8.2 Tolerancia a fallos: exportación asíncrona / timeout; si MLflow no responde la API sigue y `/health` → `degradado`; al volver → `ok`.
-- [ ] F8.3 Evaluación en MLflow (`mlflow.genai.evaluate` o runs con métricas): dataset dev + propios, calificadores de F6, métricas por tipo, latencia p50/p95 y costo.
-- [ ] F8.4 Test: API responde con MLflow apagado (tracking URI inválido).
+- [x] F8.1 Trazas: `mlflow.langchain.autolog()` + span propio por solicitud (entrada, salida, latencia, tokens, costo).
+- [x] F8.2 Tolerancia a fallos: exportación asíncrona / timeout; si MLflow no responde la API sigue y `/health` → `degradado`; al volver → `ok`.
+- [x] F8.3 Evaluación en MLflow (`mlflow.genai.evaluate` o runs con métricas): dataset dev + propios, calificadores de F6, métricas por tipo, latencia p50/p95 y costo.
+- [x] F8.4 Test: API responde con MLflow apagado (tracking URI inválido).
 
 **Verificación manual:** abrir `http://localhost:5000`, ver una traza con sus spans y un run de evaluación. Capturas.
 

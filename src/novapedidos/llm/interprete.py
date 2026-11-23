@@ -40,6 +40,7 @@ from novapedidos.llm.interfaz import ErrorInterprete, Interprete
 from novapedidos.llm.prompt import mensaje_usuario, prompt_sistema
 from novapedidos.llm.resolucion import ResolvedorProductos
 from novapedidos.motor.modelos import InterpretacionResuelta
+from novapedidos.trazado import anotar_traza, tramo
 
 logger = logging.getLogger("novapedidos.llm")
 
@@ -91,6 +92,7 @@ class InterpreteLLM:
         self._componentes: _Componentes | None = None
         self._modelo: BaseChatModel | None = None
         self._candado = threading.Lock()
+        self._local = threading.local()
 
     # ------------------------------------------------------------------ preparación
 
@@ -125,6 +127,7 @@ class InterpreteLLM:
 
     def _notificar(self, metadatos: MetadatosLlamada) -> None:
         self.ultima_llamada = metadatos
+        self._local.ultima = metadatos  # la de este hilo (para la traza)
         if self.al_terminar is not None:
             try:
                 self.al_terminar(metadatos)
@@ -155,7 +158,30 @@ class InterpreteLLM:
     def interpretar_con_metadatos(
         self, cliente_id: str, mensajes: list[str], fecha_hora: datetime
     ) -> tuple[InterpretacionResuelta, MetadatosLlamada]:
-        """Como `interpretar`, pero devuelve también latencia, tokens y costo de la llamada."""
+        """Como `interpretar`, pero devuelve también latencia, tokens y costo de la llamada.
+
+        Si hay una traza de MLflow activa, la interpretación queda en un tramo
+        `interprete_llm` (con la llamada de LangChain y la resolución como hijos) y los
+        metadatos de la llamada se copian a sus atributos y a las etiquetas de la traza (D42).
+        """
+        entradas = {"cliente_id": cliente_id, "mensajes": list(mensajes)}
+        with tramo("interprete_llm", "CHAIN", entradas) as t:
+            try:
+                interpretacion, metadatos = self._interpretar(cliente_id, mensajes)
+            except Exception:
+                ultima = getattr(self._local, "ultima", None)
+                if t is not None and ultima is not None:
+                    _anotar_metadatos(t, ultima)
+                raise
+            if t is not None:
+                _anotar_metadatos(t, metadatos)
+                t.salidas(interpretacion.model_dump(mode="json"))
+            return interpretacion, metadatos
+
+    def _interpretar(
+        self, cliente_id: str, mensajes: list[str]
+    ) -> tuple[InterpretacionResuelta, MetadatosLlamada]:
+        self._local.ultima = None
         componentes = self._preparar()
         inicio = time.perf_counter()
         filtro = False
@@ -215,7 +241,13 @@ class InterpreteLLM:
         try:
             interpretacion = a_interpretacion(parseado)
             if self.resolver:
-                interpretacion = componentes.resolvedor.resolver(interpretacion, mensajes)
+                previa = interpretacion
+                with tramo(
+                    "resolucion_productos", "PARSER", lambda: previa.model_dump(mode="json")
+                ) as t:
+                    interpretacion = componentes.resolvedor.resolver(interpretacion, mensajes)
+                    if t is not None:
+                        t.salidas(interpretacion.model_dump(mode="json"))
         except Exception as exc:  # noqa: BLE001
             metadatos = MetadatosLlamada(**{**metadatos.como_dict(), "error": type(exc).__name__})
             self._notificar(metadatos)
@@ -230,6 +262,13 @@ class InterpreteLLM:
     ) -> InterpretacionResuelta:
         interpretacion, _ = self.interpretar_con_metadatos(cliente_id, mensajes, fecha_hora)
         return interpretacion
+
+
+def _anotar_metadatos(t: Any, metadatos: MetadatosLlamada) -> None:
+    """Copia los metadatos de la llamada al tramo y a las etiquetas de la traza (D42)."""
+    datos = metadatos.como_dict()
+    t.atributos({f"llm.{k}": v for k, v in datos.items()})
+    anotar_traza({f"llm.{k}": v for k, v in datos.items() if v is not None})
 
 
 def crear_interprete_llm(

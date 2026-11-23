@@ -67,6 +67,10 @@ MENSAJES_DESCUENTO = ["mándeme 3 cajas de aceite dorado, por favor"]
 
 @pytest.fixture(scope="module")
 def datos():
+    return construir_datos_prueba()
+
+
+def construir_datos_prueba():
     """Mismos sku/precios que el Anexo: B01 (fardo 24, Q120), B11 (fardo 12, Q150), A06 (caja,
     Q228), A07 (agotado → A06). C001 visita lunes/jueves; C002 con crédito casi agotado."""
     productos = pd.DataFrame(
@@ -597,9 +601,16 @@ def mlflow_arriba():
 def test_health_ok_con_mlflow_arriba(datos, mlflow_arriba):
     r = _cliente(datos, mlflow_tracking_uri=mlflow_arriba).get("/health")
     assert r.status_code == 200
-    assert r.json() == {
+    cuerpo = r.json()
+    # El MLflow falso solo responde /health: las trazas quedan "conectando" (no degrada).
+    assert cuerpo == {
         "estado": "ok",
-        "dependencias": {"mlflow": "ok", "datos": "ok", "interprete": "falso"},
+        "dependencias": {
+            "mlflow": "ok",
+            "trazas": "conectando",
+            "datos": "ok",
+            "interprete": "falso",
+        },
     }
 
 

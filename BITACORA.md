@@ -286,3 +286,37 @@
 
 ### Próxima sesión
 - Fase 8 (MLflow): registrar `filtro_contenido`, `saneado_previo`, `id_generacion` en las trazas.
+
+---
+
+## Sesión 2026-11-23 — Fase 8 (inicio)
+**Fase:** 8 — MLflow: trazas y evaluación
+**Estado al cerrar:** Fase 8 cerrada ✅ (subagente, reanudado tras un corte por límite de uso; verificada por la sesión principal)
+
+### Logrado
+- F8.1 `src/novapedidos/trazado.py` + `RegistradorMlflow`: traza por solicitud en `novapedidos-api` (interpretar_pedido → interprete_llm → ChatOpenAI → resolucion_productos → motor_armar_pedido) con modelo, tokens, costo, latencia, id de generación.
+- F8.2 Conexión a MLflow en hilo de fondo (reintento cada 5 s), exportación asíncrona acotada, cero llamadas de red en la solicitud.
+- F8.3 `eval/correr.py --mlflow`: run por corrida en `novapedidos-evaluacion` (~60 métricas, parámetros con commit, artefactos) + `mlflow.genai.evaluate` sin volver a llamar al modelo.
+- F8.4 `tests/test_trazas_mlflow.py`, `tests/test_evaluacion_mlflow.py`, `scripts/probar_resiliencia_mlflow.py`.
+
+### Verificación
+- pytest: 461 pasan · ruff ok.
+- Evaluación completa nano: 176/177 (dev 84/84, variantes 24/24, control 14/14, propios 54/55); p50 1.63 s, p95 2.73 s; USD 0.0445.
+- Resiliencia: sobrecarga de trazas ≈ 0 ms con MLflow arriba/muerto/colgado; `/health` degradado en ≤ 1 s y ok en ~1 s al volver; trazas posteriores registradas sin reiniciar.
+
+### Lo que falló
+- El subagente se cortó por límite de uso a mitad de la fase · reanudado sin pérdida.
+- Aviso de MLflow al importar · resuelto con `MLFLOW_DISABLE_AGENT_HINT=1`.
+- ruff F811/I001 en pruebas · resuelto.
+- Capturas: URL de vista por caso y recorte de métricas · resueltos.
+- P028 (media docena de kola 3 L) falló en la corrida completa · error del modelo, intermitente.
+
+### Capturas
+- evidencia/mlflow/trazas_api_lista.png, traza_solicitud_spans.png, evaluacion_runs.png, evaluacion_run_parametros_metricas.png, evaluacion_por_caso_scorers.png.
+- evidencia/sesiones/2026-11-23_F8/resiliencia.txt y eval/.
+
+### Decisiones tomadas
+- D42–D44 (diseño de trazas, tolerancia a fallos, evaluación en MLflow).
+
+### Próxima sesión
+- Fase 9: MLflow 3.18 requiere `--allowed-hosts` con `mlflow:5000`; la API no debe depender de `service_healthy` de mlflow.
