@@ -384,3 +384,37 @@
 
 ### Próxima sesión
 - Fase 11: README completo, evidencia final con flash-lite en Docker, clon limpio, tag (con permiso).
+
+---
+
+## Sesión 2026-11-23 — Fase 11 (inicio)
+**Fase:** 11 — Documentación y entrega
+**Estado al cerrar:** en progreso: 4 de 5 tareas (F11.5 requiere permiso del usuario)
+
+### Logrado
+- F11.1 `README.md` reescrito (arquitectura, datos, `.env`, Docker, curl, MLflow, reproducir evaluación, resultados, limitaciones).
+- F11.2 `DECISIONES.md`: resumen ejecutivo de 10 decisiones; D24/D44/D49 corregidas contra el código.
+- F11.3 Evaluación final en Docker con flash-lite (`evidencia/evaluacion_final/`), resiliencia (`evidencia/resiliencia/`), capturas nuevas de MLflow (nano movidas a `evidencia/mlflow/historico_nano/`), `evidencia/README.md`.
+- F11.4 `evidencia/checklist_entrega.md`; simulación del docente desde copia limpia siguiendo el README; CI con job `imagen-docker`.
+- Ajuste de la sesión principal: reintentos del LLM 1 → 2 y timeout 20 → 15 s por los 429 (D30).
+
+### Verificación
+- pytest 465 · ruff ok.
+- Evaluación final en Docker: 175/177 (2 fallos = 429 de OpenRouter, no de interpretación); p95 1.08 s; USD 0.00019 por pedido.
+- Simulación del docente: 177/177 siguiendo el README literal.
+- Tras el ajuste de reintentos (sesión principal): propios 55/55 con 4 en paralelo, 0 errores, p95 1.31 s.
+- Sin secretos en archivos versionados, historial ni imagen.
+
+### Lo que falló
+- 429 de OpenRouter con 4 solicitudes en paralelo (2/177) · mitigado con 2 reintentos.
+- Una traza no se exportó durante `genai.evaluate` (timeout 3 s) · sin impacto en respuestas.
+- `capturar.py` no cierra los paneles emergentes de MLflow 3.18 · capturas finales con script temporal.
+
+### Capturas
+- evidencia/mlflow/*.png (flash-lite), evidencia/evaluacion_final/, evidencia/resiliencia/, evidencia/comparacion/.
+
+### Decisiones tomadas
+- D30 actualizada (timeout 15 s, 2 reintentos).
+
+### Próxima sesión
+- F11.5 (con permiso): push de ramas, PR a `main`, merge, tag `entrega-lab3`, repo público, enlace en el GES.

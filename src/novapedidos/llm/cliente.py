@@ -21,9 +21,9 @@ from langchain_openai import ChatOpenAI
 from novapedidos.config import Configuracion
 
 #: Segundos máximos por intento de llamada al modelo (un pedido normal tarda 1–3 s).
-TIMEOUT_S = 20.0
+TIMEOUT_S = 15.0
 #: Reintentos del cliente OpenAI ante errores transitorios (timeout, 429, 5xx).
-MAX_REINTENTOS = 1
+MAX_REINTENTOS = 2
 #: Encabezados opcionales de OpenRouter para identificar la aplicación (sin datos personales).
 ENCABEZADOS_OPENROUTER = {
     "HTTP-Referer": "https://localhost/novapedidos",

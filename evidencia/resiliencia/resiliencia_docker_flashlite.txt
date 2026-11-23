@@ -1,0 +1,41 @@
+[08:44:01] Resiliencia con Docker Compose · proyecto novapedidos-final · API http://127.0.0.1:8002 · MLflow http://127.0.0.1:5002 · 5 POST por fase
+[08:44:01] /health inicial: {'estado': 'ok', 'dependencias': {'mlflow': 'ok', 'trazas': 'activas', 'datos': 'ok', 'interprete': 'llm'}}
+
+[08:44:01] == A) MLflow arriba
+[08:44:01] trazas activas (registrador conectado) tras 0.0014273339766077697 s de espera
+[08:44:06] POST: n=5 p50 1023 ms · p95 1384 ms · máx 1384 ms · códigos [200]
+[08:44:09] trazas nuevas en MLflow: 5 (esperadas ≥ 5) · visibles en 2.8525109170004725 s
+
+[08:44:09] == B) docker compose stop mlflow (caído)
+[08:44:10] stop tardó 1.2 s
+[08:44:10] /health → degradado 0.01 s después de detenerlo · n=1 p50 9 ms · p95 9 ms · máx 9 ms
+[08:44:15] POST: n=5 p50 916 ms · p95 964 ms · máx 964 ms · códigos [200]
+[08:44:15] /health: degradado (13 ms) · MLflow no responde ([Errno -2] Name or service not known)
+
+[08:44:15] == C) docker compose start mlflow, sin reiniciar la API
+[08:44:15] start tardó 0.1 s
+[08:44:19] /health → ok 4.16 s después de iniciarlo
+[08:44:25] POST: n=5 p50 939 ms · p95 1663 ms · máx 1663 ms · códigos [200]
+[08:44:25] trazas nuevas en MLflow: 5 (esperadas ≥ 5) · visibles en 0.3 s
+
+[08:44:25] == D) docker compose pause mlflow (colgado: acepta TCP y no responde)
+[08:44:25] pause tardó 0.1 s
+[08:44:26] /health → degradado 1.02 s después de pausarlo · n=1 p50 1015 ms · p95 1015 ms · máx 1015 ms
+[08:44:32] POST: n=5 p50 924 ms · p95 968 ms · máx 968 ms · códigos [200]
+[08:44:32] /health: degradado (1018 ms) · MLflow no responde (timed out)
+
+[08:44:32] == E) docker compose unpause mlflow, sin reiniciar la API
+[08:44:32] unpause tardó 0.1 s
+[08:44:33] /health → ok 1.02 s después de reanudarlo
+[08:44:38] POST: n=5 p50 865 ms · p95 1201 ms · máx 1201 ms · códigos [200]
+[08:44:39] trazas nuevas en MLflow: 5 (esperadas ≥ 5) · visibles en 1.5 s
+
+[08:44:39] == F) Solicitudes inválidas y cliente inexistente
+[08:44:39] cuerpo vacío: 422 · {"error":"solicitud_invalida","mensaje":"Falta el campo obligatorio 'cliente_id'. Falta el campo obligatorio 'fecha_hora'. Falta el campo obligatorio 'mensajes'
+[08:44:39] sin mensajes: 422 · {"error":"solicitud_invalida","mensaje":"Falta el campo obligatorio 'mensajes'.","detalles":[{"campo":"mensajes","mensaje":"Falta el campo obligatorio 'mensajes
+[08:44:39] fecha_hora inválida: 422 · {"error":"solicitud_invalida","mensaje":"fecha_hora debe tener el formato AAAA-MM-DDTHH:MM (p. ej. 2026-11-28T14:53): 'ayer'.","detalles":[{"campo":"fecha_hora"
+[08:44:39] mensajes no es lista: 422 · {"error":"solicitud_invalida","mensaje":"'mensajes' debe ser una lista de textos.","detalles":[{"campo":"mensajes","mensaje":"'mensajes' debe ser una lista de t
+[08:44:39] JSON malformado: 422 · {"error":"solicitud_invalida","mensaje":"El cuerpo de la solicitud no es JSON válido.","detalles":[{"campo":"cuerpo","mensaje":"El cuerpo de la solicitud no es 
+[08:44:39] cliente inexistente C999: 404 · {"error":"cliente_no_encontrado","mensaje":"No existe un cliente con cliente_id 'C999'.","detalles":[]}
+
+[08:44:39] /health final: ok (3 ms) · {'estado': 'ok', 'dependencias': {'mlflow': 'ok', 'trazas': 'activas', 'datos': 'ok', 'interprete': 'llm'}}

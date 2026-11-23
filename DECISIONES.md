@@ -1,5 +1,53 @@
 # Decisiones del proyecto
 
+## Resumen ejecutivo
+
+Las decisiones que más pesan en el producto entregado (detalle, alternativas y evidencia en
+cada entrada):
+
+1. **Arquitectura: una llamada al LLM + código determinista** (D27, D15). El modelo solo
+   extrae menciones (texto, cantidad, unidad, acción, "lo de siempre", si es pedido) en una
+   única llamada por pedido con el catálogo completo en un prompt del sistema estático y
+   cacheable; todo lo demás es código. Latencia p95 ≈ 1.1 s y ≈ USD 0.0002 por pedido.
+2. **Cálculos de negocio solo en el motor** (D03–D08, D12, D14, D16–D19). Precios, descuentos
+   por escala, conversión de unidades, redondeo (`Decimal`, mitad hacia arriba), crédito, hora
+   de corte, día de visita y estado se calculan en `motor/` con pruebas y un oráculo que
+   reproduce los 84 casos publicados; el mensaje al cliente es una plantilla con los datos ya
+   calculados (D20).
+3. **Salida estructurada estricta** (D28). Esquema Pydantic propio con `json_schema` estricto
+   y los `sku` como enum del catálogo: el modelo no puede inventar un producto ni devolver
+   precios, descuentos, crédito o fechas porque el esquema no tiene dónde ponerlos.
+4. **Defensas contra inyección en capas** (D29, D32, D41). Mensajes delimitados y
+   neutralizados como datos, regla explícita en el prompt, esquema sin campos de condiciones,
+   motor como única fuente de cálculos y saneo ante el filtro de contenido del proveedor.
+   Integridad de precios 100 % en todas las corridas y 14/14 casos de manipulación.
+5. **Resolución de productos después del LLM** (D31, D37, D40, D49). Alias exactos,
+   coincidencia por palabras (genérico → ambiguo con opciones), anclaje del texto al mensaje y
+   guardas de unidad y de corrección. Es la decisión con más impacto medido: sin ella la
+   exactitud cae de 98.9 % a 74 % con el mismo modelo.
+6. **Contrato y errores** (D21–D26). Contrato del Anexo compartido en Pydantic; 422 con
+   mensaje en español que nombra cada campo, 404 para cliente inexistente, 503 explícito si el
+   modelo o los datos fallan (nunca 500 ni un pedido inventado); `/health` siempre 200 con
+   `ok`/`degradado` + `motivo`.
+7. **MLflow tolerante a fallos** (D42, D43, D47). Una traza por solicitud con spans de LLM,
+   resolución y motor; ninguna llamada de red a MLflow en el hilo de la solicitud (conexión en
+   segundo plano, exportación asíncrona con timeout 3 s y cola acotada); `/health` consulta
+   MLflow con timeout y caché de 1 s. Con MLflow detenido o colgado todas las solicitudes
+   responden 200.
+8. **Evaluación con código y casos propios** (D33–D36, D38, D39, D44). 11 calificadores
+   deterministas (sin juez LLM), 177 casos (84 publicados + 24 variantes + 14 de control + 55
+   propios con inyección, bordes de reglas y situaciones fuera del catálogo) con `esperado`
+   calculado por el motor; cada corrida se registra en MLflow con `mlflow.genai.evaluate`.
+9. **Docker Compose sin datos ni credenciales en la imagen** (D45–D48). Imagen
+   `python:3.11-slim` + `uv` con usuario no root; datos montados de solo lectura; `.env` por
+   `env_file`; MLflow 3.18 con sqlite en un volumen; puertos configurables.
+10. **Modelo entregado: `google/gemini-2.5-flash-lite`** (D49, reemplaza a D01). Comparado con
+    otros 5 modelos y una arquitectura alternativa en los mismos 177 casos: la mayor exactitud
+    (177/177 en dos repeticiones), la menor latencia (p50 0.78 s, p95 1.16 s) y el costo más
+    bajo (USD 0.21 por 1000 pedidos).
+
+## Registro
+
 Registro de decisiones de diseño y de interpretación de políticas. Cada entrada tiene:
 **Contexto · Decisión · Alternativas · Justificación / evidencia**.
 
@@ -34,13 +82,13 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D21 | Contrato compartido | `novapedidos.contrato` (Pydantic): montos `Decimal` → número de 2 decimales en JSON; `ErrorClienteInexistente` para el 404 |
 | D22 | Errores 404 y 422 | `{"error", "mensaje", "detalles":[{campo, mensaje, tipo}]}` en español; 422 nombra el campo y resume todos los problemas |
 | D23 | Fallos del intérprete y errores internos | 503 (`interprete_no_disponible`, `datos_no_disponibles`, `error_interno`), nunca 500 ni un pedido inventado |
-| D24 | `/health` | MLflow por `GET <uri>/health` (timeout 1 s, caché 5 s); también datos e intérprete; `degradado` + `motivo` |
+| D24 | `/health` | MLflow por `GET <uri>/health` (timeout 1 s, caché 1 s desde D43; antes 5 s); también datos e intérprete; `degradado` + `motivo` |
 | D25 | Elección del intérprete | Protocolo `Interprete` inyectado; `INTERPRETE=llm` (defecto) o `falso`; sin LLM real → 503 claro |
 | D26 | Límites de la solicitud | `cliente_id` 1–64, 1–50 mensajes de 1–2000 caracteres (recortados); campos extra ignorados |
 | D27 | Arquitectura del intérprete | **Una** llamada por pedido con el catálogo completo y compacto en el prompt del sistema (estático, cacheable) y salida estructurada estricta |
 | D28 | Esquema de salida del LLM | Esquema propio plano (`InterpretacionPedido`) con `sku`/`opciones` como enum de los sku del catálogo; sin precio, descuento, crédito ni fecha |
 | D29 | Defensas contra inyección | Mensajes delimitados como datos (`<mensajes>`, `<`/`>` neutralizados), regla explícita en el prompt, esquema sin campos de condiciones, motor como única fuente de cálculos |
-| D30 | Parámetros del cliente | `temperature=0`, timeout 20 s, 1 reintento, `usage.include` (costo), encabezados `X-Title`/`HTTP-Referer` genéricos |
+| D30 | Parámetros del cliente | `temperature=0`, timeout 15 s, 2 reintentos con espera exponencial (ajustado en la Fase 11 por los 429), `usage.include` (costo), encabezados `X-Title`/`HTTP-Referer` genéricos |
 | D31 | Resolución post-LLM | Alias exacto, coincidencia palabra por palabra (genérico → ambiguo), difuso solo para `no_existe`, anclaje del texto al mensaje, guardas de unidad y de corrección |
 | D32 | Rechazo del filtro de contenido | Reintento único sin las oraciones manipuladoras; si no queda nada → no es pedido |
 | D33 | Calificadores | Funciones puras 0/1 + detalle; líneas como multiconjunto, total ± 0.005, motivos como conjunto, `texto` de pendientes laxo; `integridad_precios` sin `esperado` |
@@ -54,7 +102,7 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D41 | Latencia de cola | Causa medida: tiempo de generación de Azure (no reintentos de red) + doble llamada del filtro D32; mitigación: sanear antes de llamar cuando se pide ignorar las instrucciones |
 | D42 | Trazas de MLflow por solicitud | Tramo raíz `interpretar_pedido` + `interprete_llm` (autolog de LangChain) + `resolucion_productos` + `motor_armar_pedido`; etiquetas de modelo, tokens, costo, latencias, estado HTTP; experimento `novapedidos-api` |
 | D43 | Tolerancia a fallos de MLflow | Ninguna llamada de red en el hilo de la solicitud: conexión en hilo de fondo con reintentos, destino por id, exportación asíncrona acotada (timeout 3 s, 1 reintento, cola 200); `/health` con caché de 1 s |
-| D44 | Evaluación en MLflow | `eval/correr.py --mlflow`: un run por corrida (parámetros, ~60 métricas, artefactos, tablas) + `mlflow.genai.evaluate` con los calificadores como scorers sobre salidas ya calculadas (costo cero) |
+| D44 | Evaluación en MLflow | `eval/correr.py --mlflow`: un run por corrida (parámetros, ~56 métricas, artefactos, tablas) + `mlflow.genai.evaluate` con los calificadores como scorers sobre salidas ya calculadas (costo cero) |
 | D45 | Imagen de la API | `python:3.11-slim` + uv 0.13.7 (`uv sync --frozen --no-dev` en dos capas), usuario no root, sin datos ni `.env` (`.dockerignore`) |
 | D46 | MLflow en Compose | `ghcr.io/mlflow/mlflow:v3.18.0`, sqlite + artefactos servidos en el volumen `mlflow-datos`, `--allowed-hosts` con `mlflow:5000` y localhost |
 | D47 | Compose: dependencias, variables y salud | `depends_on` simple (sin `service_healthy`), variables de D43 en `environment`, datos `:ro`, healthchecks, `restart: unless-stopped` |
@@ -478,8 +526,8 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
   (MLflow) no está disponible; la API debe seguir respondiendo pedidos con MLflow caído.
 - **Decisión.** `GET /health` siempre responde 200 con `{"estado", "motivo"?, "dependencias"}`
   (`motivo` solo si `degradado`; `dependencias` es diagnóstico adicional por dependencia):
-  - **MLflow**: `GET <MLFLOW_TRACKING_URI>/health` con **timeout de 1 s** y **caché de 5 s**
-    (`api/salud.py`, `MonitorMlflow`, con candado para no duplicar consultas). URI vacía →
+  - **MLflow**: `GET <MLFLOW_TRACKING_URI>/health` con **timeout de 1 s** y **caché de 1 s**
+    (la caché era de 5 s; se redujo en D43 para que una caída se vea antes) (`api/salud.py`, `MonitorMlflow`, con candado para no duplicar consultas). URI vacía →
     `desactivado` (no degrada: MLflow se apagó a propósito); URI no HTTP (`file:`, `sqlite:`,
     ruta) → `local` (no hay servidor que consultar; no degrada); error de red/HTTP → degradado
     con el motivo (p. ej. "MLflow no responde (Connection refused)").
@@ -608,7 +656,7 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 
 - **Contexto.** Latencia acotada, determinismo y medición de costo.
 - **Decisión.** `novapedidos.llm.cliente.crear_modelo_chat`: `temperature=0`, `timeout=20 s`
-  por intento, `max_retries=1` (peor caso ≈ 40 s + espera; en la práctica 1–3 s),
+  por intento, `max_retries=2` (Fase 11: 15 s por intento y 2 reintentos tras ver 429 con 4 solicitudes en paralelo; peor caso ≈ 45 s + espera; en la práctica < 1.5 s con flash-lite),
   `extra_body={"usage": {"include": True}}` (OpenRouter devuelve `usage.cost`), encabezados
   `HTTP-Referer: https://localhost/novapedidos` y `X-Title: NovaPedidos (laboratorio)` (sin
   datos personales). La clave se pasa como `SecretStr` y nunca se registra.
@@ -1250,6 +1298,12 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
   resolución se desarrollaron con nano, así que la exactitud en casos no publicados puede
   diferir; un solo proveedor (Google AI Studio) sirve el modelo en OpenRouter; los modelos
   2.5 de Google pueden retirarse (OpenRouter no anuncia fecha de expiración al 2026-11-23).
+- **Verificación final en Docker** (`evidencia/evaluacion_final/`, 2026-11-23): por HTTP contra
+  la API en Compose, 177 casos con 4 en paralelo: 175/177 con p50 0.83 s y p95 1.08 s; los 2
+  fallos fueron 503 por **429 de OpenRouter** (límite de tasa del proveedor único), no de
+  interpretación, y repetidos salen exactos. Una segunda corrida siguiendo el README en una
+  copia limpia dio 177/177. El cliente reintenta una vez (D30); si el 429 persiste la API
+  responde 503 sin inventar el pedido.
 
 ---
 

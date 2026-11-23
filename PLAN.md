@@ -210,10 +210,10 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** el docente puede levantar, evaluar y entender el proyecto sin preguntar.
 **Requisito PDF:** §5, entregables.
 
-- [ ] F11.1 `README.md`: requisitos, dónde poner los datos, `.env`, `docker compose up`, cómo reproducir la evaluación.
-- [ ] F11.2 `DECISIONES.md` completo (arquitectura, resolución de productos, mensaje al cliente, defensas, MLflow, modelo).
-- [ ] F11.3 `evidencia/`: comparación, capturas de trazas y evaluaciones, resultado de resiliencia.
-- [ ] F11.4 Revisión final contra la matriz de cumplimiento; clon limpio desde GitHub.
+- [x] F11.1 `README.md`: requisitos, dónde poner los datos, `.env`, `docker compose up`, cómo reproducir la evaluación.
+- [x] F11.2 `DECISIONES.md` completo (arquitectura, resolución de productos, mensaje al cliente, defensas, MLflow, modelo).
+- [x] F11.3 `evidencia/`: comparación, capturas de trazas y evaluaciones, resultado de resiliencia.
+- [x] F11.4 Revisión final contra la matriz de cumplimiento; clon limpio desde GitHub.
 - [ ] F11.5 Tag `entrega-lab3`, repo accesible para el docente, enlace en el GES.
 
 **Verificación manual:** seguir el README en un clon limpio; ver el tag en GitHub.

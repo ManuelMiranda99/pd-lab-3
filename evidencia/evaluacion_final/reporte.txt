@@ -1,0 +1,79 @@
+Evaluación · final_docker_flashlite · HTTP · http://127.0.0.1:8002/v1/pedidos/interpretar
+Archivos: ejemplos/mensajes_dev.jsonl, eval/casos_variantes.jsonl, eval/casos_control.jsonl, eval/casos_propios.jsonl · casos: 177 · concurrencia: 4 · errores: 2
+
+Exactitud global (caso exacto): 175/177 = 98.9 %
+
+Exactitud por tipo:
+  agotado               10/10  100.0 %
+  ambiguo               15/15  100.0 %
+  audio                  6/6   100.0 %
+  borde_regla            7/7   100.0 %
+  correccion            13/13  100.0 %
+  credito                9/9   100.0 %
+  fuera_catalogo         9/10   90.0 %
+  fuera_de_alcance      10/10  100.0 %
+  habitual              16/16  100.0 %
+  inyeccion             12/12  100.0 %
+  manipulacion           2/2   100.0 %
+  no_existe              8/8   100.0 %
+  simple                25/25  100.0 %
+  sin_cantidad           7/7   100.0 %
+  unidades              16/16  100.0 %
+  varios_mensajes       10/11   90.9 %
+
+Exactitud por archivo:
+  casos_control.jsonl           14/14  100.0 %
+  casos_propios.jsonl           53/55   96.4 %
+  casos_variantes.jsonl         24/24  100.0 %
+  mensajes_dev.jsonl            84/84  100.0 %
+
+Por calificador:
+  caso_exacto          175/177  98.9 %
+  estado               175/177  98.9 %
+  lineas               175/177  98.9 %
+  total                175/177  98.9 %
+  fecha_entrega        175/177  98.9 %
+  motivos_revision     175/177  98.9 %
+  pendientes           175/177  98.9 %
+  sustituciones        175/177  98.9 %
+  lineas_estricto      175/177  98.9 %
+  integridad_precios   175/177  98.9 %
+  mensaje_cliente      175/177  98.9 %
+  latencia             177/177 100.0 %
+
+Latencia por pedido (punta a punta): p50 0.83 s · p95 1.08 s · máx 1.36 s · media 0.83 s
+Tokens entrada/salida (en caché): 0 / 0 (0)
+Costo: no disponible (la API no expone el costo)
+Duración de la corrida: 37.3 s
+
+Fallos (2):
+✗ P042 [varios_mensajes] C029 2026-11-28T10:00
+    mensajes: ['hola buenas', 'mándeme 2 fardos de agua pura 1.5', 'ah y unas sopas rápidas, 4 cajas']
+    error: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - estado: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - lineas: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - total: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - fecha_entrega: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - motivos_revision: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - pendientes: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - sustituciones: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - lineas_estricto: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - integridad_precios: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - mensaje_cliente: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    esperado: confirmado · líneas [B08×2, A15×4] · total 624.0 · fecha 2026-12-05 · motivos [] · pendientes [∅]
+    obtenido: (sin respuesta)
+✗ P051 [fuera_catalogo] C016 2026-11-27T09:00
+    mensajes: ['¿a cómo está el detergente espumoso? mándeme 2 fardos de una vez']
+    error: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - estado: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - lineas: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - total: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - fecha_entrega: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - motivos_revision: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - pendientes: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - sustituciones: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - lineas_estricto: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - integridad_precios: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    - mensaje_cliente: HTTP 503: {'error': 'interprete_no_disponible', 'mensaje': 'No se pudieron interpretar los mensajes: el modelo no respondió correctamente (OpenAIRateLimitError)', 'detalles': []}
+    esperado: confirmado · líneas [L01×2] · total 528.0 · fecha 2026-11-30 · motivos [] · pendientes [∅]
+    obtenido: (sin respuesta)
