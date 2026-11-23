@@ -1,0 +1,74 @@
+# Bitácora de sesiones — Laboratorio 3
+
+> La mantienen `/iniciar-fase` y `/cerrar-fase`. La entrada más reciente va **al final**.
+> Cada entrada cierra con "Próxima sesión", que es lo primero que lee `/iniciar-fase`.
+
+---
+
+## Sesión 2026-11-22 — Planificación
+**Fase:** Previa a la Fase 0
+**Estado al cerrar:** planificación terminada
+
+### Logrado
+- Revisión del PDF, `politicas.md`, `catalogo_problemas.md`, los 5 parquet y `mensajes_dev.jsonl`.
+- `PLAN.md` con 12 fases (0–11), tareas con ID, verificación manual por fase y matriz de cumplimiento.
+- Skills `/iniciar-fase` y `/cerrar-fase` en `.claude/skills/` (objetivo + resumen al inicio;
+  fallos + capturas al cierre).
+
+### Verificación
+- Entorno: Python 3.11, `uv`, Docker 29.9 activo, `gh` autenticado.
+
+### Lo que falló
+- `pdftotext` no está instalado; el PDF se leyó directamente (sin impacto).
+
+### Hallazgos de los datos
+- 7 agotados; A13, S02 y P04 sin sustituto. "aceite" es ambiguo A06/A07 aunque A07 esté agotado.
+- Casos dev entre 2026-11-23 y 2026-12-12; historial hasta 2026-11-20.
+
+### Pendientes / bloqueos
+- Falta la clave de OpenRouter en `.env` (la consigue el usuario).
+- Confirmar fecha límite y si el repo será público o privado con el docente como colaborador.
+
+### Próxima sesión
+- Empezar por: **Fase 0**, F0.1 (`git init` y `.gitignore`).
+- Luego: F0.2–F0.5 y F0.7 (probar OpenRouter con la clave).
+- Tener en cuenta: los datos y el PDF nunca entran al repo.
+
+---
+
+## Sesión 2026-11-22 — Fase 0 (inicio)
+**Fase:** 0 — Preparación del repositorio
+**Estado al cerrar:** en progreso: 6 de 7 tareas (falta subir a GitHub y ver la CI en verde)
+
+### Logrado
+- F0.1 `git init -b main`, `.gitignore` (`/datos/`, `.env`, `*.pdf`, `*.parquet`, MLflow local, `/eval/resultados/`).
+- F0.2 `pyproject.toml` + `uv.lock` (langchain 1.5, langchain-openai 1.8, mlflow 3.18, fastapi 0.165, pydantic 2.14…).
+- F0.3 Estructura `src/novapedidos/{datos,motor,llm,api}`, `config.py` con la clave como `SecretStr`.
+- F0.4 `CLAUDE.md` (reglas + flujo con subagentes), `.env.example`, `.env` local, `README.md` mínimo.
+- F0.5 `scripts/capturar.py` (Playwright con el Chrome instalado).
+- F0.6 `.github/workflows/ci.yml` (ruff + pytest); falta crear el repo y el primer push.
+- F0.7 `scripts/ping_llm.py` con salida estructurada; `evidencia/modelos_candidatos.md`.
+
+### Verificación (hecha por la sesión principal, no solo el reporte del subagente)
+- pytest: 3 pasan · ruff: sin errores.
+- `git check-ignore`: `datos/`, `.env` y el PDF ignorados.
+- ping OpenRouter (`openai/gpt-4.1-nano`): salida estructurada correcta, 1.86 s, 164/17 tokens, USD 0.0000232.
+
+### Lo que falló
+- `.gitignore` con `datos/` ignoraba también `src/novapedidos/datos/` · resuelto con `/datos/`.
+- `ruff format` marcó una línea larga en `ping_llm.py` · resuelto.
+- Prueba con clave falsa → 401 de OpenRouter · esperado; el script sale con mensaje claro.
+
+### Capturas
+- evidencia/sesiones/2026-11-22_F0/prueba_captura.png — prueba de `capturar.py`.
+- evidencia/sesiones/2026-11-22_F0/ping_llm.txt — salida del ping a OpenRouter.
+
+### Decisiones tomadas
+- Modelo de desarrollo: `openai/gpt-4.1-nano` (USD 0.10/0.40 por M); recomendados para F10 en `evidencia/modelos_candidatos.md`.
+- Se versionan `politicas.md`, `catalogo_problemas.md` y `ejemplos/`; no los parquet, `.env`, PDF ni MLflow local.
+- (Pasar ambas a `DECISIONES.md` cuando se cree en la Fase 1.)
+
+### Próxima sesión
+- Empezar por: cerrar F0.6 (primer commit, `gh repo create` privado, CI en verde).
+- Luego: **Fase 1** en rama `feat/carga-datos`: F1.1 loader, F1.2 exploración de casos, F1.3 dudas de política, F1.4 tests.
+- Tener en cuenta: tests con datos marcados `requiere_datos` y saltados en CI.

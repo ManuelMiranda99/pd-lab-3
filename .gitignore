@@ -1,0 +1,36 @@
+# --- Datos publicados y credenciales: NUNCA en el repo ---
+/datos/
+*.parquet
+.env
+*.pdf
+
+# --- MLflow local ---
+mlruns/
+mlartifacts/
+mlflow.db
+
+# --- Resultados generados por la evaluación (se regeneran; el resumen va a evidencia/) ---
+/eval/resultados/
+
+# --- Python / herramientas ---
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+
+# --- Sistema / editor ---
+.DS_Store
+.idea/
+.vscode/
+
+# --- Claude Code: ajustes locales personales ---
+.claude/settings.local.json
+
+# Laboratorio (PDF del enunciado) y archivos de R
+Laboratorio_3_PD_26.pdf
+.Rhistory

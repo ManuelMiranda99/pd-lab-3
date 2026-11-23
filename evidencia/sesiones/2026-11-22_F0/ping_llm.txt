@@ -1,0 +1,7 @@
+Modelo pedido:      openai/gpt-4.1-nano
+Modelo que respondió: openai/gpt-4.1-nano
+Mensaje:            Buenas don, me manda 3 fardos de agua pura 600 porfa
+Respuesta:          LineaPrueba(producto='agua pura', cantidad=3, unidad='fardos')
+Latencia:           1.86 s
+Tokens entrada/salida: 164 / 17
+Costo:              USD 0.00002320 (fuente: usage.cost)

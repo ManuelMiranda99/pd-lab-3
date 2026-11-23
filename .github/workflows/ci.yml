@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-y-pruebas:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Instalar Python 3.11
+        run: uv python install 3.11
+
+      - name: Instalar dependencias (según uv.lock)
+        run: uv sync --locked
+
+      - name: Ruff
+        run: uv run ruff check
+
+      - name: Pytest (sin datos publicados ni clave de OpenRouter)
+        run: uv run pytest -q
