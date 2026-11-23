@@ -522,16 +522,17 @@ def test_interprete_por_variable_de_entorno():
     assert "INTERPRETE='gpt'" in invalido.motivo
 
 
-def test_interprete_llm_aun_no_implementado_responde_503_y_health_degradado(datos):
+def test_interprete_llm_sin_clave_responde_503_y_health_degradado(datos):
     app = crear_app(_config(interprete="llm"))
     app.dependency_overrides[obtener_proveedor_datos] = lambda: lambda: datos
     cliente = TestClient(app)
     r = cliente.post(URL, json=SOLICITUD_ANEXO)
     assert r.status_code == 503
-    assert "INTERPRETE=falso" in r.json()["mensaje"]
+    assert r.json()["error"] == "interprete_no_disponible"
+    assert "OPENROUTER_API_KEY" in r.json()["mensaje"]
     salud = cliente.get("/health").json()
     assert salud["estado"] == "degradado"
-    assert "intérprete no disponible" in salud["motivo"]
+    assert "falta OPENROUTER_API_KEY" in salud["motivo"]
 
 
 # --------------------------------------------------------------------------- gancho de trazas

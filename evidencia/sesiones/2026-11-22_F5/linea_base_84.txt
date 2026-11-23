@@ -1,0 +1,158 @@
+Modelo: openai/gpt-4.1-nano · resolución post-LLM: sí · casos: 84 · hilos: 1
+
+OK  D001 unidades           2.28s USD 0.000484
+OK  D002 fuera_de_alcance   1.22s USD 0.000187
+OK  D003 ambiguo            1.64s USD 0.000228
+OK  D004 audio              1.32s USD 0.000228
+OK  D005 ambiguo            1.49s USD 0.000227
+OK  D006 simple             1.44s USD 0.000209
+OK  D007 simple             1.52s USD 0.000267
+OK  D008 ambiguo            1.58s USD 0.000251
+OK  D009 simple             2.26s USD 0.000269
+OK  D010 credito            1.63s USD 0.000206
+OK  D011 simple             1.22s USD 0.000207
+OK  D012 habitual           1.44s USD 0.000208
+OK  D013 simple             1.44s USD 0.000248
+OK  D014 ambiguo            1.56s USD 0.000231
+OK  D015 sin_cantidad       1.48s USD 0.000229
+OK  D016 simple             1.22s USD 0.000208
+OK  D017 habitual           1.26s USD 0.000188
+OK  D018 simple             1.33s USD 0.000207
+OK  D019 simple             1.63s USD 0.000252
+OK  D020 correccion         3.65s USD 0.000231
+OK  D021 correccion         1.85s USD 0.000277
+OK  D022 simple             1.33s USD 0.000207
+OK  D023 credito            1.36s USD 0.000251
+OK  D024 unidades           1.35s USD 0.000208
+OK  D025 habitual           1.32s USD 0.000206
+OK  D026 sin_cantidad       1.46s USD 0.000229
+OK  D027 agotado            1.30s USD 0.000228
+OK  D028 ambiguo            1.54s USD 0.000225
+OK  D029 credito            1.33s USD 0.000229
+OK  D030 habitual           1.22s USD 0.000187
+OK  D031 habitual           1.45s USD 0.000208
+OK  D032 agotado            1.64s USD 0.000249
+OK  D033 habitual           1.12s USD 0.000208
+OK  D034 simple             1.69s USD 0.000247
+OK  D035 simple             1.32s USD 0.000249
+OK  D036 no_existe          1.68s USD 0.000246
+OK  D037 agotado            1.55s USD 0.000228
+OK  D038 fuera_de_alcance   1.15s USD 0.000188
+OK  D039 no_existe          1.49s USD 0.000246
+OK  D040 habitual           1.65s USD 0.000228
+OK  D041 correccion         1.76s USD 0.000252
+OK  D042 agotado            1.65s USD 0.000249
+OK  D043 varios_mensajes    1.73s USD 0.000557
+OK  D044 habitual           1.21s USD 0.000208
+XX  D045 no_existe          1.18s USD 0.000210
+      mensajes: ['hola buen día, me hace favor de mandarme naranjita 600 ml: 3 y recargas de q50 x 3. gracias, que esté bien']
+      - estado confirmado ≠ requiere_revision
+      - motivos [] ≠ ['producto_no_existe']
+      - pendientes [] ≠ [('producto_no_existe', ())]
+        · 'naranjita 600 ml' sku B04 3 venta agregar
+OK  D046 simple             1.80s USD 0.000230
+OK  D047 varios_mensajes    1.33s USD 0.000231
+OK  D048 no_existe          2.42s USD 0.000230
+OK  D049 simple             1.47s USD 0.000229
+OK  D050 unidades           1.46s USD 0.000209
+OK  D051 unidades           1.30s USD 0.000230
+OK  D052 agotado            1.43s USD 0.000228
+XX  D053 audio              1.44s USD 0.000249
+      mensajes: ['(audio transcrito) buenas seño le hago mi pedido y cuatro de juguitos también tres de jabón de barra lavandero 350 g mire y diez cajas de leche vaquita y eso sería todo']
+      - estado confirmado ≠ requiere_revision
+      - líneas [('A16', 10), ('B09', 4), ('L02', 3)] ≠ [('A16', 10), ('L02', 3)]
+      - total 4670.4 ≠ 4286.4
+      - motivos [] ≠ ['producto_ambiguo']
+      - pendientes [] ≠ [('producto_ambiguo', ('B09', 'B10'))]
+      - sustituciones distintas
+        · 'jugo huerto manzana' sku B10 4 venta agregar
+        · 'jabon lavandero' sku L02 3 venta agregar
+        · 'leche vaquita' sku A16 10 venta agregar
+OK  D054 correccion         1.43s USD 0.000231
+OK  D055 simple             1.22s USD 0.000207
+OK  D056 unidades           1.44s USD 0.000231
+OK  D057 simple             1.94s USD 0.000270
+OK  D058 varios_mensajes    1.32s USD 0.000208
+OK  D059 audio              1.96s USD 0.000250
+OK  D060 simple             1.54s USD 0.000230
+OK  D061 unidades           1.31s USD 0.000210
+OK  D062 correccion         1.66s USD 0.000271
+OK  D063 simple             1.22s USD 0.000206
+XX  D064 ambiguo            1.23s USD 0.000227
+      mensajes: ['Hola, para el pedido: 4 de agua pura cristal 1.5 l y cocas: 4. eso sería todo']
+      - motivos ['producto_no_existe'] ≠ ['producto_ambiguo']
+      - pendientes [('producto_no_existe', ())] ≠ [('producto_ambiguo', ('B01', 'B02', 'B03'))]
+        · 'agua pura cristal 1.5' sku B08 4 venta agregar
+        · 'cocas' no_existe [] 4 venta agregar
+OK  D065 unidades           2.19s USD 0.000248
+OK  D066 fuera_de_alcance   1.50s USD 0.000188
+OK  D067 agotado            1.74s USD 0.000250
+OK  D068 sin_cantidad       1.42s USD 0.000246
+OK  D069 fuera_de_alcance   1.25s USD 0.000188
+OK  D070 correccion         1.43s USD 0.000253
+OK  D071 credito            1.33s USD 0.000230
+OK  D072 simple             1.64s USD 0.000271
+OK  D073 varios_mensajes    1.84s USD 0.000272
+XX  D074 unidades           1.52s USD 0.000248
+      mensajes: ['Para esta semana:\n- sal pacifico: 5\n- 48 bolsas de detergente espumoso\n- 4 de jaabon lavandero. saludos']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('A11', 5), ('L01', 48), ('L02', 4)] ≠ [('A11', 5), ('L01', 2), ('L02', 4)]
+      - total 13205.9 ≠ 1695.5
+      - motivos ['credito_excedido'] ≠ []
+        · 'sal pacifico' sku A11 5 venta agregar
+        · 'detergente espumoso' sku L01 48 venta agregar
+        · 'jabon lavandero' sku L02 4 venta agregar
+OK  D075 credito            1.31s USD 0.000227
+OK  D076 varios_mensajes    1.58s USD 0.000253
+XX  D077 varios_mensajes    2.26s USD 0.000293
+      mensajes: ['Buenos días don, me apunta té qutezal: 4 y 4 de sal pacifico', 'Ah, y 5 displays de galletas ducitas vainilla y 1 de kola norte 1.5', 'Mejor 6 fardos de sal pacifico 1 lb. nada mas por hoy']
+      - líneas [('A11', 10), ('B02', 1), ('B12', 4), ('S01', 5)] ≠ [('A11', 6), ('B02', 1), ('B12', 4), ('S01', 5)]
+      - total 1410.0 ≠ 1131.0
+        · 'te quetzal' sku B12 4 venta agregar
+        · 'sal pacifico' sku A11 4 venta agregar
+        · 'galletas dulcitas vainilla' sku S01 5 venta agregar
+        · 'kola norte 1.5' sku B02 1 venta agregar
+        · 'sal pacifico 1 lb' sku A11 6 venta agregar
+OK  D078 sin_cantidad       1.24s USD 0.000228
+OK  D079 simple             1.35s USD 0.000227
+XX  D080 varios_mensajes    1.18s USD 0.000210
+      mensajes: ['Buenas', 'le encargo lo de siempre', 'y también una caja de aceite dorado']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('B05', 1), ('B09', 1), ('L03', 3), ('P03', 3)] ≠ [('A06', 1), ('B05', 1), ('B09', 1), ('L03', 3), ('P03', 3)]
+      - total 984.0 ≠ 1212.0
+      - motivos ['producto_ambiguo'] ≠ []
+      - pendientes [('producto_ambiguo', ('A06', 'A07'))] ≠ []
+        · 'aceite' ambiguo ['A06', 'A07'] 1 venta agregar
+        · lo_de_siempre
+OK  D081 correccion         1.46s USD 0.000228
+OK  D082 ambiguo            1.36s USD 0.000228
+OK  D083 fuera_de_alcance   1.19s USD 0.000187
+XX  D084 unidades           1.43s USD 0.000230
+      mensajes: ['Mándeme una docena de cloro blancura y 2 fardos de coditos bella']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('L03', 1)] ≠ [('A09', 2), ('L03', 1)]
+      - total 108.0 ≠ 300.0
+      - motivos ['producto_ambiguo'] ≠ []
+      - pendientes [('producto_ambiguo', ('A09', 'A10', 'P03'))] ≠ []
+        · 'cloro blancura' sku L03 1 docena agregar
+        · 'pasta' ambiguo ['A09', 'A10', 'P03'] 2 venta agregar
+
+Exactitud por tipo:
+  agotado             6/6   100.0 %
+  ambiguo             6/7    85.7 %
+  audio               2/3    66.7 %
+  correccion          7/7   100.0 %
+  credito             5/5   100.0 %
+  fuera_de_alcance    5/5   100.0 %
+  habitual            8/8   100.0 %
+  no_existe           3/4    75.0 %
+  simple             19/19  100.0 %
+  sin_cantidad        4/4   100.0 %
+  unidades            7/9    77.8 %
+  varios_mensajes     5/7    71.4 %
+
+Exactitud global: 77/84 = 91.7 %
+Latencia por llamada: p50 1.44 s · p95 2.25 s · media 1.52 s
+Tokens entrada/salida: 439878 / 11629
+Costo total: USD 0.019869 (por caso USD 0.000237)
+Duración: 128.2 s

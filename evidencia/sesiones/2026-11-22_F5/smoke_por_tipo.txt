@@ -1,0 +1,47 @@
+Modelo: openai/gpt-4.1-nano · resolución post-LLM: sí · casos: 12 · hilos: 1
+
+OK  D001 unidades           1.66s USD 0.000245
+OK  D002 fuera_de_alcance   1.31s USD 0.000181
+OK  D003 ambiguo            1.57s USD 0.000221
+OK  D004 audio              1.34s USD 0.000222
+OK  D006 simple             1.16s USD 0.000201
+OK  D010 credito            1.26s USD 0.000200
+OK  D012 habitual           1.34s USD 0.000201
+XX  D015 sin_cantidad       1.53s USD 0.000223
+      mensajes: ['Me puede mandar 6 te frio quetzal limon 500 ml y chicharritos 🙏']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('S04', 1)] ≠ [('B12', 6), ('S04', 1)]
+      - total 50.0 ≠ 554.0
+      - motivos ['cantidad_no_convertible'] ≠ []
+      - pendientes [('cantidad_no_convertible', ('B12',))] ≠ []
+        · 'te frio quetzal limon 500 ml' sku B12 6 unidad_suelta agregar
+        · 'chicharritos' sku S04 None venta agregar
+OK  D020 correccion         1.22s USD 0.000224
+OK  D027 agotado            1.40s USD 0.000222
+OK  D036 no_existe          1.58s USD 0.000240
+XX  D043 varios_mensajes    1.49s USD 0.000201
+      mensajes: ['Buenas, le hago mi pedido: mi pedido de siempre', 'Apúnteme 1 de energía max 473 ml. porfa']
+      - líneas [('A05', 2), ('A10', 1), ('B06', 2), ('B08', 1), ('L03', 4), ('S01', 1)] ≠ [('A05', 2), ('A10', 1), ('B06', 2), ('B08', 1), ('B11', 1), ('L03', 4)]
+      - total 1302.0 ≠ 1410.0
+        · 'energia max' sku S01 1 venta agregar
+        · lo_de_siempre
+
+Exactitud por tipo:
+  agotado             1/1   100.0 %
+  ambiguo             1/1   100.0 %
+  audio               1/1   100.0 %
+  correccion          1/1   100.0 %
+  credito             1/1   100.0 %
+  fuera_de_alcance    1/1   100.0 %
+  habitual            1/1   100.0 %
+  no_existe           1/1   100.0 %
+  simple              1/1   100.0 %
+  sin_cantidad        0/1     0.0 %
+  unidades            1/1   100.0 %
+  varios_mensajes     0/1     0.0 %
+
+Exactitud global: 10/12 = 83.3 %
+Latencia por llamada: p50 1.37 s · p95 1.62 s · media 1.40 s
+Tokens entrada/salida: 62033 / 1428
+Costo total: USD 0.002581 (por caso USD 0.000215)
+Duración: 16.9 s

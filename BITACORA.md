@@ -189,3 +189,38 @@
 
 ### Próxima sesión
 - Fase 5 (intérprete LangChain + OpenRouter) implementando `crear_interprete_llm(config)`.
+
+---
+
+## Sesión 2026-11-22 — Fase 5 (inicio)
+**Fase:** 5 — Intérprete con LangChain + OpenRouter
+**Estado al cerrar:** Fase 5 cerrada ✅ (subagente; verificada por la sesión principal, terminó 2026-11-23)
+
+### Logrado
+- F5.1 `llm/cliente.py`: ChatOpenAI → OpenRouter, temperature 0, timeout 20 s, 1 reintento, metadatos por llamada (tokens, costo, latencia).
+- F5.2 `llm/esquema.py` (salida estructurada `json_schema` strict, sku como enum del catálogo, sin campos de precio) y `llm/prompt.py` (catálogo completo + 7 ejemplos; prompt estático cacheable).
+- F5.3 `llm/resolucion.py`: alias exacto, coincidencia por palabras (genéricos → ambiguo), fuzzy solo para no_existe, guardas de unidades y correcciones.
+- F5.4 Mensajes delimitados como datos, `llm/defensas.py` (reintento si el filtro de contenido del proveedor rechaza), pruebas de inyección.
+- F5.5 `llm/interprete.py` (`crear_interprete_llm`) conectado a la API; `scripts/probar_casos.py`.
+
+### Verificación
+- pytest: 393 pasan (sin llamar al modelo) · ruff ok.
+- 84 casos dev: línea base 77/84 (91.7 %) → final 84/84 en dos corridas; sin la resolución en código 60/84 (71.4 %).
+- Latencia p50 ~1.5 s, p95 ~2.2 s; costo ~USD 0.00023 por pedido. Gasto de la fase ~USD 0.09.
+- Smoke re-ejecutado por la sesión principal: 12/12, p95 1.86 s.
+
+### Lo que falló
+- gpt-4.1-nano solo se sirve desde Azure en OpenRouter: su filtro de contenido rechazó 2 mensajes de inyección (503) · mitigado con D32 (reintento sin las oraciones manipuladoras, +2.5 s).
+- Dos pruebas propias fallaron al inicio (clasificación de errores) · resueltas.
+- Un comando de shell colgado · resuelto.
+
+### Capturas
+- evidencia/sesiones/2026-11-22_F5/{linea_base_84,final_84,final_84_repeticion,final_84_sin_resolucion,smoke_por_tipo,smoke_verificacion_principal,respuestas_llm}.txt
+
+### Decisiones tomadas
+- D27–D32 (una llamada con catálogo en el prompt, enum de sku, defensas en capas, parámetros, resolución post-LLM, respaldo ante filtro de contenido).
+- Riesgo: el 100 % en dev es optimista (reglas ajustadas viendo dev); validar con casos propios (Fase 7).
+
+### Próxima sesión
+- Fase 6 (evaluación local) y Fase 7 (casos propios) para medir sobreajuste; probar modelos fuera de Azure.
+- Fase 9: parar el contenedor que ocupa el puerto 8000.

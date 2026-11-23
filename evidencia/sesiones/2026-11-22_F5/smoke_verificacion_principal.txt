@@ -1,0 +1,25 @@
+OK  D015 sin_cantidad       1.43s USD 0.000233
+OK  D020 correccion         1.33s USD 0.000226
+OK  D027 agotado            1.41s USD 0.000224
+OK  D036 no_existe          1.45s USD 0.000241
+OK  D043 varios_mensajes    1.16s USD 0.000203
+
+Exactitud por tipo:
+  agotado             1/1   100.0 %
+  ambiguo             1/1   100.0 %
+  audio               1/1   100.0 %
+  correccion          1/1   100.0 %
+  credito             1/1   100.0 %
+  fuera_de_alcance    1/1   100.0 %
+  habitual            1/1   100.0 %
+  no_existe           1/1   100.0 %
+  simple              1/1   100.0 %
+  sin_cantidad        1/1   100.0 %
+  unidades            1/1   100.0 %
+  varios_mensajes     1/1   100.0 %
+
+Exactitud global: 12/12 = 100.0 %
+Latencia por llamada: p50 1.38 s · p95 1.86 s · media 1.44 s
+Tokens entrada/salida: 64373 / 1440
+Costo total: USD 0.002632 (por caso USD 0.000219)
+Duración: 17.3 s

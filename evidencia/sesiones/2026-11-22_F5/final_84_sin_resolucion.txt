@@ -1,0 +1,278 @@
+Modelo: openai/gpt-4.1-nano · resolución post-LLM: no · casos: 84 · hilos: 1
+
+OK  D001 unidades           2.44s USD 0.000247
+OK  D002 fuera_de_alcance   1.41s USD 0.000191
+XX  D003 ambiguo            1.48s USD 0.000224
+      mensajes: ['Buenas tardes, porfa me trae 3 fardos de arroz ceiba de libra y naranjitas: 3. gracias']
+      - estado confirmado ≠ requiere_revision
+      - líneas [('A01', 3), ('B04', 3)] ≠ [('A01', 3)]
+      - total 705.0 ≠ 375.0
+      - motivos [] ≠ ['producto_ambiguo']
+      - pendientes [] ≠ [('producto_ambiguo', ('B04', 'B05'))]
+        · 'arroz ceiba de libra' sku A01 3 venta agregar
+        · 'naranjita 600' sku B04 3 venta agregar
+OK  D004 audio              2.05s USD 0.000225
+XX  D005 ambiguo            1.59s USD 0.000223
+      mensajes: ['Buenas noches, mandeme 10 cajitas de nutrimezcla y papel higienico. eso seria todo']
+      - estado confirmado ≠ requiere_revision
+      - líneas [('A14', 10), ('L04', 1)] ≠ [('A14', 10)]
+      - total 1713.6 ≠ 1497.6
+      - motivos [] ≠ ['producto_ambiguo']
+      - pendientes [] ≠ [('producto_ambiguo', ('L04', 'L05'))]
+        · 'nutrimezcla' sku A14 10 docena agregar
+        · 'papel higiénico' sku L04 None venta agregar
+OK  D006 simple             1.28s USD 0.000204
+OK  D007 simple             1.74s USD 0.000262
+OK  D008 ambiguo            1.42s USD 0.000246
+XX  D009 simple             1.64s USD 0.000264
+      mensajes: ['Hola, mandeme nranjita 600 ml: 5, dos de papitas doradas, 2 cloro blancura 1 l y 4 cajas de sopa rapida. porfa']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('A15', 4), ('B04', 5), ('S05', 2)] ≠ [('A15', 4), ('B04', 5), ('L03', 2), ('S05', 2)]
+      - total 1126.0 ≠ 1342.0
+      - motivos ['cantidad_no_convertible'] ≠ []
+      - pendientes [('cantidad_no_convertible', ('L03',))] ≠ []
+        · 'naranjita 600 ml' sku B04 5 venta agregar
+        · 'papitas doradas' sku S05 2 venta agregar
+        · 'cloro blancura' sku L03 2 unidad_suelta agregar
+        · 'sopa rapida' sku A15 4 venta agregar
+OK  D010 credito            1.41s USD 0.000210
+OK  D011 simple             1.67s USD 0.000211
+OK  D012 habitual           1.22s USD 0.000203
+OK  D013 simple             1.98s USD 0.000243
+OK  D014 ambiguo            1.29s USD 0.000227
+XX  D015 sin_cantidad       1.32s USD 0.000233
+      mensajes: ['Me puede mandar 6 te frio quetzal limon 500 ml y chicharritos 🙏']
+      - líneas [('S04', 1), ('S06', 6)] ≠ [('B12', 6), ('S04', 1)]
+      - total 410.0 ≠ 554.0
+        · 'te frio quetzal limon 500 ml' sku S06 6 venta agregar
+        · 'chicharritos' sku S04 None venta agregar
+XX  D016 simple             1.45s USD 0.000212
+      mensajes: ['Buenas, me apunta 3 agua pura cristal 600 ml. gracias']
+      - estado requiere_revision ≠ confirmado
+      - líneas [] ≠ [('B07', 3)]
+      - total 0.0 ≠ 180.0
+      - motivos ['cantidad_no_convertible'] ≠ []
+      - pendientes [('cantidad_no_convertible', ('B07',))] ≠ []
+        · 'agua pura cristal 600' sku B07 3 unidad_suelta agregar
+OK  D017 habitual           1.13s USD 0.000192
+OK  D018 simple             1.53s USD 0.000211
+OK  D019 simple             1.43s USD 0.000247
+OK  D020 correccion         1.64s USD 0.000226
+OK  D021 correccion         1.85s USD 0.000273
+OK  D022 simple             1.14s USD 0.000211
+XX  D023 credito            2.04s USD 0.000246
+      mensajes: ['Buenas tardes don, le hago mi pedido: 2 te frio quetzal limon 500 ml, 3 cajas de laavaplatos brillo y galletas saladas crac: 4']
+      - líneas [('L06', 3), ('S03', 4)] ≠ [('B12', 2), ('L06', 3), ('S03', 4)]
+      - total 680.0 ≠ 848.0
+      - motivos ['agotado_sin_sustituto', 'credito_excedido'] ≠ ['credito_excedido']
+      - pendientes [('agotado_sin_sustituto', ('S02',))] ≠ []
+        · 'te quetzal limon 500 ml' sku S02 2 venta agregar
+        · 'lavaplatos brillo' sku L06 3 venta agregar
+        · 'galletas saladas crac' sku S03 4 venta agregar
+XX  D024 unidades           1.77s USD 0.000212
+      mensajes: ['necesito 36 bolsas de cafe altura molido. porfa']
+      - estado requiere_revision ≠ confirmado
+      - líneas [] ≠ [('A12', 3)]
+      - total 0.0 ≠ 1260.0
+      - motivos ['cantidad_no_convertible'] ≠ []
+      - pendientes [('cantidad_no_convertible', ('L02',))] ≠ []
+        · 'cafe altura molido' sku L02 36 unidad_suelta agregar
+OK  D025 habitual           1.34s USD 0.000210
+XX  D026 sin_cantidad       1.37s USD 0.000224
+      mensajes: ['BUENOS DÍAS DON, NECESITO 4 FARDOS DE ENERGÍA MAX Y TAMBIÉN KOLA NORTE 1.5 L. GRACIAS, QUE ESTÉ BIEN']
+      - líneas [('B02', 1), ('S01', 4)] ≠ [('B02', 1), ('B11', 4)]
+      - total 312.0 ≠ 744.0
+        · 'energia max' sku S01 4 venta agregar
+        · 'kola norte 1.5' sku B02 1 venta agregar
+OK  D027 agotado            1.57s USD 0.000224
+XX  D028 ambiguo            1.30s USD 0.000230
+      mensajes: ['Buenas tardes, necesito 5 harina mazorca y naranjitas 🙏']
+      - estado confirmado ≠ requiere_revision
+      - líneas [('A08', 5), ('B04', 1)] ≠ [('A08', 5)]
+      - total 992.0 ≠ 882.0
+      - motivos [] ≠ ['producto_ambiguo']
+      - pendientes [] ≠ [('producto_ambiguo', ('B04', 'B05'))]
+        · 'harina mazorca' sku A08 5 venta agregar
+        · 'naranjitas' sku B04 None venta agregar
+OK  D029 credito            1.64s USD 0.000224
+OK  D030 habitual           1.24s USD 0.000192
+OK  D031 habitual           1.54s USD 0.000212
+OK  D032 agotado            1.55s USD 0.000244
+OK  D033 habitual           1.33s USD 0.000203
+XX  D034 simple             1.43s USD 0.000242
+      mensajes: ['hola, me manda 3 de leche en polvo vaquita 360 g, 3 de limonada volcan y 6 papitas doradas 40 g. gracias don']
+      - líneas [('B12', 3), ('L06', 3), ('S05', 6)] ≠ [('A16', 3), ('B06', 3), ('S05', 6)]
+      - total 1080.0 ≠ 1770.0
+        · 'leche vaquita' sku L06 3 venta agregar
+        · 'limonada volcan' sku B12 3 venta agregar
+        · 'papitas doradas' sku S05 6 venta agregar
+XX  D035 simple             1.59s USD 0.000244
+      mensajes: ['Que tal, quiero cinco de naranjita 600, kola norte 600 ml: 5 y 6 de jabon de tocador rosa 100 g 🙏']
+      - líneas [('B01', 5), ('B04', 5), ('P01', 3)] ≠ [('B01', 5), ('B04', 5), ('P01', 6)]
+      - total 1654.0 ≠ 2127.76
+        · 'naranjita 600' sku B04 5 venta agregar
+        · 'kola norte 600 ml' sku B01 5 venta agregar
+        · 'jabon rosa' sku P01 6 docena agregar
+OK  D036 no_existe          1.43s USD 0.000241
+OK  D037 agotado            1.40s USD 0.000223
+OK  D038 fuera_de_alcance   1.09s USD 0.000192
+XX  D039 no_existe          1.66s USD 0.000242
+      mensajes: ['Hola, le encargo dos paquetes de velas, 5 lavaplatos brillo y sal pacifico: 6. Dios lo bendiga']
+      - líneas [('A11', 6)] ≠ [('A11', 6), ('L06', 5)]
+      - total 441.0 ≠ 1341.0
+      - motivos ['producto_no_existe', 'cantidad_no_convertible'] ≠ ['producto_no_existe']
+      - pendientes [('cantidad_no_convertible', ('L06',)), ('producto_no_existe', ())] ≠ [('producto_no_existe', ())]
+        · 'velas' no_existe [] 2 venta agregar
+        · 'lavaplatos brillo' sku L06 5 unidad_suelta agregar
+        · 'sal pacifico' sku A11 6 venta agregar
+OK  D040 habitual           1.23s USD 0.000223
+XX  D041 correccion         1.43s USD 0.000248
+      mensajes: ['BUENAS SEÑO, ME APUNTA 6 DISPLAYS DE GALLETA CRAC Y SEIS DE TE QUTZAL. CORRIJO: DE GALLETA CRAC SON OCHO']
+      - líneas [('S03', 8), ('S06', 6)] ≠ [('B12', 6), ('S03', 8)]
+      - total 640.0 ≠ 784.0
+        · 'galletas saladas crac' sku S03 6 venta agregar
+        · 'té fríó quetzal limón 500 ml' sku S06 6 venta agregar
+        · 'galleta crac' ambiguo ['S03'] 8 venta corregir
+OK  D042 agotado            1.48s USD 0.000244
+XX  D043 varios_mensajes    1.48s USD 0.000203
+      mensajes: ['Buenas, le hago mi pedido: mi pedido de siempre', 'Apúnteme 1 de energía max 473 ml. porfa']
+      - líneas [('A05', 2), ('A10', 1), ('B06', 2), ('B08', 1), ('L03', 4), ('S01', 1)] ≠ [('A05', 2), ('A10', 1), ('B06', 2), ('B08', 1), ('B11', 1), ('L03', 4)]
+      - total 1302.0 ≠ 1410.0
+        · 'energia max' sku S01 1 venta agregar
+        · lo_de_siempre
+OK  D044 habitual           1.33s USD 0.000203
+OK  D045 no_existe          1.33s USD 0.000225
+OK  D046 simple             1.64s USD 0.000225
+OK  D047 varios_mensajes    1.30s USD 0.000225
+OK  D048 no_existe          1.57s USD 0.000225
+OK  D049 simple             1.29s USD 0.000225
+OK  D050 unidades           1.21s USD 0.000214
+OK  D051 unidades           1.29s USD 0.000225
+XX  D052 agotado            1.20s USD 0.000223
+      mensajes: ['Hola, para el pedido: una caja de jabon de tocador rosa 100 g y dos cajas de jugo huerto manzana 250 ml 👍']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('B09', 2)] ≠ [('B09', 2), ('P01', 1)]
+      - total 192.0 ≠ 360.0
+      - motivos ['cantidad_no_convertible'] ≠ []
+      - pendientes [('cantidad_no_convertible', ('P01',))] ≠ []
+        · 'jabon rosa' sku P01 1 docena agregar
+        · 'jugo huerto manzana' sku B10 2 venta agregar
+XX  D053 audio              1.66s USD 0.000244
+      mensajes: ['(audio transcrito) buenas seño le hago mi pedido y cuatro de juguitos también tres de jabón de barra lavandero 350 g mire y diez cajas de leche vaquita y eso sería todo']
+      - estado confirmado ≠ requiere_revision
+      - líneas [('A16', 10), ('B09', 4), ('L02', 3)] ≠ [('A16', 10), ('L02', 3)]
+      - total 4670.4 ≠ 4286.4
+      - motivos [] ≠ ['producto_ambiguo']
+      - pendientes [] ≠ [('producto_ambiguo', ('B09', 'B10'))]
+      - sustituciones distintas
+        · 'jugo huerto manzana' sku B10 4 venta agregar
+        · 'jabon lavandero' sku L02 3 venta agregar
+        · 'leche vaquita' sku A16 10 venta agregar
+OK  D054 correccion         1.47s USD 0.000227
+OK  D055 simple             1.14s USD 0.000212
+OK  D056 unidades           1.37s USD 0.000226
+OK  D057 simple             1.63s USD 0.000265
+OK  D058 varios_mensajes    1.54s USD 0.000204
+OK  D059 audio              1.50s USD 0.000246
+OK  D060 simple             1.47s USD 0.000225
+OK  D061 unidades           1.44s USD 0.000205
+OK  D062 correccion         1.53s USD 0.000266
+XX  D063 simple             1.21s USD 0.000210
+      mensajes: ['Hola, quiero 5 energía max 473 ml. nada más por hoy']
+      - líneas [('S01', 5)] ≠ [('B11', 5)]
+      - total 210.0 ≠ 750.0
+        · 'energia max' sku S01 5 venta agregar
+XX  D064 ambiguo            1.35s USD 0.000223
+      mensajes: ['Hola, para el pedido: 4 de agua pura cristal 1.5 l y cocas: 4. eso sería todo']
+      - motivos ['producto_no_existe'] ≠ ['producto_ambiguo']
+      - pendientes [('producto_no_existe', ())] ≠ [('producto_ambiguo', ('B01', 'B02', 'B03'))]
+        · 'agua pura cristal 1.5' sku B08 4 venta agregar
+        · 'cocas' no_existe [] 4 venta agregar
+OK  D065 unidades           1.43s USD 0.000243
+OK  D066 fuera_de_alcance   1.53s USD 0.000192
+OK  D067 agotado            1.44s USD 0.000245
+XX  D068 sin_cantidad       1.54s USD 0.000241
+      mensajes: ['Buenas seño, le paso el pedido:\n- jabon rosa: 3\n- mani la finca: 4\n- sopa rapida. saludos']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('A15', 1), ('S06', 4)] ≠ [('A15', 1), ('P01', 3), ('S06', 4)]
+      - total 360.0 ≠ 864.0
+      - motivos ['cantidad_no_convertible'] ≠ []
+      - pendientes [('cantidad_no_convertible', ('P01',))] ≠ []
+        · 'jabon rosa' sku P01 3 docena agregar
+        · 'mani la finca' sku S06 4 venta agregar
+        · 'sopa rapida' sku A15 1 venta agregar
+OK  D069 fuera_de_alcance   1.42s USD 0.000192
+OK  D070 correccion         1.44s USD 0.000246
+OK  D071 credito            1.64s USD 0.000225
+OK  D072 simple             1.65s USD 0.000265
+XX  D073 varios_mensajes    1.62s USD 0.000268
+      mensajes: ['Hola buen día, mándeme agua pura cristal 600 ml: 2 y 6 cajas de jabón rosa', 'Le hago mi pedido: 3 de naranjita 600', 'Corrijo: de jaabón de tocador rosa 100 g son nueve. Dios lo bendiga']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('B04', 3)] ≠ [('B04', 3), ('B07', 2), ('P01', 9)]
+      - total 330.0 ≠ 1916.64
+      - motivos ['cantidad_no_convertible'] ≠ []
+      - pendientes [('cantidad_no_convertible', ('B08',)), ('cantidad_no_convertible', ('P01',))] ≠ []
+        · 'agua pura cristal 600' sku B08 2 unidad_suelta agregar
+        · 'jabón rosa' sku P01 6 docena agregar
+        · 'naranjita 600' sku B04 3 venta agregar
+        · 'jabon rosa' sku P01 9 docena corregir
+XX  D074 unidades           1.43s USD 0.000243
+      mensajes: ['Para esta semana:\n- sal pacifico: 5\n- 48 bolsas de detergente espumoso\n- 4 de jaabon lavandero. saludos']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('A11', 5), ('L01', 48), ('L02', 4)] ≠ [('A11', 5), ('L01', 2), ('L02', 4)]
+      - total 13205.9 ≠ 1695.5
+      - motivos ['credito_excedido'] ≠ []
+        · 'sal pacifico' sku A11 5 venta agregar
+        · 'detergente espumoso' sku L01 48 venta agregar
+        · 'jabon lavandero' sku L02 4 venta agregar
+OK  D075 credito            3.17s USD 0.000223
+OK  D076 varios_mensajes    1.55s USD 0.000249
+XX  D077 varios_mensajes    1.74s USD 0.000287
+      mensajes: ['Buenos días don, me apunta té qutezal: 4 y 4 de sal pacifico', 'Ah, y 5 displays de galletas ducitas vainilla y 1 de kola norte 1.5', 'Mejor 6 fardos de sal pacifico 1 lb. nada mas por hoy']
+      - líneas [('A11', 6), ('B02', 1), ('S01', 9)] ≠ [('A11', 6), ('B02', 1), ('B12', 4), ('S01', 5)]
+      - total 963.0 ≠ 1131.0
+        · 'te quetzal' sku S01 4 venta agregar
+        · 'sal pacifico' sku A11 4 venta agregar
+        · 'galletas dulcitas vainilla' sku S01 5 venta agregar
+        · 'kola norte 1.5' sku B02 1 venta agregar
+        · 'sal pacifico' sku A11 6 venta corregir
+OK  D078 sin_cantidad       1.53s USD 0.000223
+OK  D079 simple             1.54s USD 0.000222
+XX  D080 varios_mensajes    1.43s USD 0.000206
+      mensajes: ['Buenas', 'le encargo lo de siempre', 'y también una caja de aceite dorado']
+      - estado requiere_revision ≠ confirmado
+      - líneas [('B05', 1), ('B09', 1), ('L03', 3), ('P03', 3)] ≠ [('A06', 1), ('B05', 1), ('B09', 1), ('L03', 3), ('P03', 3)]
+      - total 984.0 ≠ 1212.0
+      - motivos ['producto_ambiguo'] ≠ []
+      - pendientes [('producto_ambiguo', ('A06', 'A07'))] ≠ []
+        · 'aceite dorado' ambiguo ['A06', 'A07'] None venta agregar
+        · lo_de_siempre
+OK  D081 correccion         1.84s USD 0.000244
+XX  D082 ambiguo            1.52s USD 0.000232
+      mensajes: ['Hola, necesito 2 cajas de aceite y una de café altura molido']
+      - líneas [('L06', 1)] ≠ [('A12', 1)]
+      - total 180.0 ≠ 420.0
+        · 'aceite' ambiguo ['A06', 'A07'] 2 venta agregar
+        · 'cafe altura molido' sku L06 1 venta agregar
+OK  D083 fuera_de_alcance   1.24s USD 0.000191
+OK  D084 unidades           1.42s USD 0.000230
+
+Exactitud por tipo:
+  agotado             5/6    83.3 %
+  ambiguo             2/7    28.6 %
+  audio               2/3    66.7 %
+  correccion          6/7    85.7 %
+  credito             4/5    80.0 %
+  fuera_de_alcance    5/5   100.0 %
+  habitual            8/8   100.0 %
+  no_existe           3/4    75.0 %
+  simple             14/19   73.7 %
+  sin_cantidad        1/4    25.0 %
+  unidades            7/9    77.8 %
+  varios_mensajes     3/7    42.9 %
+
+Exactitud global: 60/84 = 71.4 %
+Latencia por llamada: p50 1.46 s · p95 1.96 s · media 1.51 s
+Tokens entrada/salida: 450882 / 11728
+Costo total: USD 0.019118 (por caso USD 0.000228)
+Duración: 126.8 s
