@@ -86,7 +86,7 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 - [x] F0.3 Estructura: `src/novapedidos/{datos,motor,llm,api}`, `tests/`, `eval/`, `scripts/`, `evidencia/`.
 - [x] F0.4 `CLAUDE.md` con reglas del proyecto; `.env.example` (`OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `MLFLOW_TRACKING_URI`, `DATOS_DIR`).
 - [x] F0.5 `scripts/capturar.py` (Playwright headless): guarda PNG de una URL en `evidencia/…` (lo usa `/cerrar-fase`).
-- [~] F0.6 Repo en GitHub (`gh repo create`), primer commit con plan, bitácora y skills; CI mínima (ruff + pytest) en GitHub Actions.
+- [x] F0.6 Repo en GitHub (`gh repo create`), primer commit con plan, bitácora y skills; CI mínima (ruff + pytest) en GitHub Actions.
 - [x] F0.7 Verificar acceso a OpenRouter: script `scripts/ping_llm.py` que hace una llamada de prueba y muestra costo/latencia.
 
 **Verificación manual:** `git log` con el commit inicial · repo visible en GitHub · `uv run pytest` corre (0 tests) · `uv run python scripts/ping_llm.py` responde · `git status` no muestra `datos/` ni `.env`.
@@ -95,10 +95,10 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** entender cada política con los datos reales antes de programar el motor.
 **Requisito PDF:** base para §1 (políticas) y §3 (evaluación).
 
-- [ ] F1.1 `datos/loader.py`: carga y valida los 5 parquet (tipos, sku únicos, sustitutos existentes), cacheado en memoria.
-- [ ] F1.2 Notebook o script `scripts/explorar_casos.py`: por cada `tipo` de `mensajes_dev.jsonl`, mostrar 1–2 ejemplos con su esperado y anotar la regla que lo explica.
-- [ ] F1.3 Detectar dudas de política (p. ej. redondeo, "aceite" con A07 agotado, días de visita con hora de corte, docenas) y resolverlas con los ejemplos; anotar en `DECISIONES.md`.
-- [ ] F1.4 Tests de carga (`tests/test_datos.py`).
+- [x] F1.1 `datos/loader.py`: carga y valida los 5 parquet (tipos, sku únicos, sustitutos existentes), cacheado en memoria.
+- [x] F1.2 Notebook o script `scripts/explorar_casos.py`: por cada `tipo` de `mensajes_dev.jsonl`, mostrar 1–2 ejemplos con su esperado y anotar la regla que lo explica.
+- [x] F1.3 Detectar dudas de política (p. ej. redondeo, "aceite" con A07 agotado, días de visita con hora de corte, docenas) y resolverlas con los ejemplos; anotar en `DECISIONES.md`.
+- [x] F1.4 Tests de carga (`tests/test_datos.py`).
 
 **Verificación manual:** leer el resumen de exploración y la lista de dudas resueltas en `DECISIONES.md`.
 
@@ -243,5 +243,5 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 - [ ] Modelo a entregar (el docente usará **ese** modelo con **su** clave): priorizar uno estable, barato y con buen soporte de salida estructurada.
 - [ ] ¿Mensaje al cliente por plantilla o por LLM? (plantilla = latencia y coherencia; LLM = tono más natural).
 - [ ] Latencia: una sola llamada LLM por pedido si es posible; medir p95.
-- [ ] Repo público o privado con el docente como colaborador (falta su usuario de GitHub).
+- [x] Repo privado durante el trabajo; se hace público al finalizar (F11.5).
 - [ ] Fecha límite de entrega: _por confirmar_.

@@ -38,7 +38,7 @@
 
 ## Sesión 2026-11-22 — Fase 0 (inicio)
 **Fase:** 0 — Preparación del repositorio
-**Estado al cerrar:** en progreso: 6 de 7 tareas (falta subir a GitHub y ver la CI en verde)
+**Estado al cerrar:** Fase 0 cerrada ✅
 
 ### Logrado
 - F0.1 `git init -b main`, `.gitignore` (`/datos/`, `.env`, `*.pdf`, `*.parquet`, MLflow local, `/eval/resultados/`).
@@ -46,7 +46,7 @@
 - F0.3 Estructura `src/novapedidos/{datos,motor,llm,api}`, `config.py` con la clave como `SecretStr`.
 - F0.4 `CLAUDE.md` (reglas + flujo con subagentes), `.env.example`, `.env` local, `README.md` mínimo.
 - F0.5 `scripts/capturar.py` (Playwright con el Chrome instalado).
-- F0.6 `.github/workflows/ci.yml` (ruff + pytest); falta crear el repo y el primer push.
+- F0.6 `.github/workflows/ci.yml` (ruff + pytest); repo privado https://github.com/ManuelMiranda99/pd-lab-3, commit inicial `dafe90a`, CI en verde (22 s). El PDF y `.Rhistory` se ignoran explícitamente.
 - F0.7 `scripts/ping_llm.py` con salida estructurada; `evidencia/modelos_candidatos.md`.
 
 ### Verificación (hecha por la sesión principal, no solo el reporte del subagente)
@@ -69,6 +69,35 @@
 - (Pasar ambas a `DECISIONES.md` cuando se cree en la Fase 1.)
 
 ### Próxima sesión
-- Empezar por: cerrar F0.6 (primer commit, `gh repo create` privado, CI en verde).
-- Luego: **Fase 1** en rama `feat/carga-datos`: F1.1 loader, F1.2 exploración de casos, F1.3 dudas de política, F1.4 tests.
-- Tener en cuenta: tests con datos marcados `requiere_datos` y saltados en CI.
+- Empezar por: **Fase 1** en rama `feat/carga-datos`: F1.1 loader, F1.2 exploración de casos, F1.3 dudas de política, F1.4 tests.
+- Tener en cuenta: tests con datos marcados `requiere_datos` y saltados en CI. El repo se hace público al terminar todo (F11.5).
+
+---
+
+## Sesión 2026-11-22 — Fase 1 (inicio)
+**Fase:** 1 — Carga de datos y exploración de casos
+**Estado al cerrar:** Fase 1 cerrada ✅ (subagente; verificada por la sesión principal)
+
+### Logrado
+- F1.1 `src/novapedidos/datos/catalogo.py`: `obtener_datos()` (cacheado), `Datos` inmutable con `producto`, `cliente`, `sku_por_alias`, `ultimo_pedido_entregado`; validación estricta (`ErrorDatos`).
+- F1.2 `scripts/explorar_casos.py` → `evidencia/sesiones/2026-11-22_F1/exploracion.txt`.
+- F1.3 `DECISIONES.md` con D01–D13 (corte 14:00, visita estrictamente posterior, redondeo `Decimal` HALF_UP, "lo de siempre", orden de líneas/motivos, ambigüedad incluye agotados, crédito).
+- F1.4 `tests/test_datos.py` (28 sintéticas + 3 con datos reales, saltadas en CI).
+
+### Verificación
+- pytest: 31 pasan · ruff check/format: ok.
+- Reglas vs dev: precio 79/79, descuento 79/79, redondeo 79/79, total 84/84, fecha 84/84, crédito 79/79, sustituciones 14/14, coherencia 84/84; "lo de siempre" 10/12 (los 2 restantes son exclusiones "sin X", esperadas).
+
+### Lo que falló
+- Regla (g) fallaba en D047 (A07 sustituido por A06 ya presente) · resuelto: fusionar por sku entregado (D07).
+- ruff E501/E741/B007 · resuelto.
+- Lectura del PDF sin `pdftotext` · resuelto con `uv run --with pypdf` (sin añadir dependencia).
+
+### Capturas
+- evidencia/sesiones/2026-11-22_F1/exploracion.txt (salida de texto; no aplica imagen).
+
+### Decisiones tomadas
+- D01–D13 en DECISIONES.md. Discrepancia Anexo vs dev en `pendientes[].texto` (fragmento vs nombre normalizado): calificar `texto` de forma laxa.
+
+### Próxima sesión
+- Fase 2 (motor de cálculos). Casos sin cobertura dev para Fase 7: `cantidad_no_convertible`, 14:00 exacto, crédito justo en el límite, varios motivos, menciones repetidas, cliente sin pedidos entregados.
