@@ -159,13 +159,20 @@ _PALABRAS_SUELTAS = (
 def verificar_unidades(menciones: Sequence[Mencion], mensajes: Sequence[str]) -> list[Mencion]:
     """Si en la conversación no aparece ninguna palabra de unidad suelta o docena, una mención
     con `unidad_suelta`/`docena` es un error del modelo (p. ej. tomó "500 ml" por unidades):
-    vuelve a `venta`. Si aparece alguna, se respeta lo que dijo el modelo."""
+    vuelve a `venta`. Si aparece alguna, una mención `unidad_suelta` con cantidad exige que
+    **ese** número vaya seguido de una palabra de unidad suelta ("48 bolsas") o sea la media
+    docena; si no ("4 de jabon lavandero" junto a "48 bolsas de detergente"), es `venta`."""
     texto = normalizar(" ".join(mensajes))
     hay_sueltas = any(p in texto for p in _PALABRAS_SUELTAS)
     hay_docena = "docena" in texto
     resultado = []
     for m in menciones:
-        if (m.unidad == Unidad.UNIDAD_SUELTA and not hay_sueltas) or (
+        sin_respaldo = (
+            m.unidad == Unidad.UNIDAD_SUELTA
+            and m.cantidad is not None
+            and not _numero_con_suelta(m.cantidad, texto)
+        )
+        if (m.unidad == Unidad.UNIDAD_SUELTA and (not hay_sueltas or sin_respaldo)) or (
             m.unidad == Unidad.DOCENA and not hay_docena
         ):
             m = m.model_copy(update={"unidad": Unidad.VENTA})
@@ -178,6 +185,16 @@ def verificar_unidades(menciones: Sequence[Mencion], mensajes: Sequence[str]) ->
 _PATRON_SUELTAS = r"(botellas?|latas?|latitas?|bolsas?|bolsitas?|sobres?|unidades|piezas?)"
 
 
+def _numero_con_suelta(cantidad: int, texto_normalizado: str) -> bool:
+    """El número (en cifras o letras) va seguido de una palabra de unidad suelta, o es la
+    "media docena" (6)."""
+    if cantidad == 6 and "media docena" in texto_normalizado:
+        return True
+    escritos = [str(cantidad)] + [p for p, n in NUMEROS_EN_LETRAS.items() if n == cantidad]
+    numero = "|".join(map(re.escape, escritos))
+    return re.search(rf"(?<![\w.])({numero})\s+{_PATRON_SUELTAS}\b", texto_normalizado) is not None
+
+
 def _dijo_sueltas(m: Mencion, texto_normalizado: str) -> bool:
     """ "48 bolsas de detergente espumoso": el número de la mención va seguido de una palabra
     de unidad suelta y luego del texto del producto (el modelo dejó `venta` por error)."""
@@ -186,6 +203,116 @@ def _dijo_sueltas(m: Mencion, texto_normalizado: str) -> bool:
         return False
     patron = rf"\b{m.cantidad}\s+{_PATRON_SUELTAS}\s+(de\s+)?" + r"\s+".join(map(re.escape, inicio))
     return re.search(patron, texto_normalizado) is not None
+
+
+#: Números escritos con letras que usan los tenderos (normalizados, sin tildes).
+NUMEROS_EN_LETRAS: dict[str, int] = {
+    "un": 1,
+    "uno": 1,
+    "una": 1,
+    "dos": 2,
+    "tres": 3,
+    "cuatro": 4,
+    "cinco": 5,
+    "seis": 6,
+    "siete": 7,
+    "ocho": 8,
+    "nueve": 9,
+    "diez": 10,
+    "once": 11,
+    "doce": 12,
+    "trece": 13,
+    "catorce": 14,
+    "quince": 15,
+    "dieciseis": 16,
+    "veinte": 20,
+    "veinticuatro": 24,
+    "treinta": 30,
+    "cuarenta": 40,
+    "cincuenta": 50,
+}
+_UNIDADES_VENTA_TXT = r"fardos?|farditos?|cajas?|cajitas?|displays?|quintal(?:es)?|paquetes?"
+_UNIDADES_SUELTA_TXT = r"botellas?|latas?|latitas?|bolsas?|bolsitas?|sobres?|unidades|piezas?"
+_PATRON_CANTIDAD = (
+    r"(?<![\w.])(?P<n>\d+|media|" + "|".join(NUMEROS_EN_LETRAS) + r") +"
+    r"(?:(?P<u>docenas?|" + _UNIDADES_VENTA_TXT + "|" + _UNIDADES_SUELTA_TXT + r") +)?"
+    r"(?:de +)?(?:(?:el|la|los|las) +)?"
+)
+
+
+def normalizar_suave(texto: str) -> str:
+    """Minúsculas y sin tildes, pero **conserva** la puntuación y los saltos de línea, para que
+    un patrón no cruce de una línea o lista a otra ("mani: 4\n- sopa rapida")."""
+    return re.sub(r"[ \t]+", " ", sin_tildes(texto.lower()).replace("ñ", "n"))
+
+
+def _numeros_de(texto: str) -> set[int]:
+    """Números de la conversación, en cifras ("16.", "48") o en letras ("nueve")."""
+    fichas = re.findall(r"[a-z]+|\d+(?:\.\d+)?", normalizar(texto))
+    numeros = {int(f) for f in fichas if f.isdigit()}
+    numeros |= {NUMEROS_EN_LETRAS[f] for f in fichas if f in NUMEROS_EN_LETRAS}
+    return numeros
+
+
+def _cantidad_en_mensaje(m: Mencion, texto_suave: str) -> tuple[int, Unidad] | None:
+    """Cantidad y unidad que el mensaje pone **justo antes** del producto ("2 docenas de jabon
+    rosa", "2 cajas de cloro", "media docena de cloro"). `None` si no hay o si hay varias
+    lecturas distintas (el producto aparece con cantidades diferentes)."""
+    inicio = palabras_inicio(m.texto)
+    if not inicio:
+        return None
+    patron = _PATRON_CANTIDAD + r" +".join(map(re.escape, inicio)) + r"\b"
+    lecturas = set()
+    for coincidencia in re.finditer(patron, texto_suave):
+        n_txt, u = coincidencia.group("n"), coincidencia.group("u") or ""
+        if n_txt == "media":
+            if u.startswith("docena"):
+                lecturas.add((6, Unidad.UNIDAD_SUELTA))
+            continue
+        n = int(n_txt) if n_txt.isdigit() else NUMEROS_EN_LETRAS[n_txt]
+        if u.startswith("docena"):
+            unidad = Unidad.DOCENA
+        elif u and re.fullmatch(_UNIDADES_SUELTA_TXT, u):
+            unidad = Unidad.UNIDAD_SUELTA
+        else:
+            unidad = Unidad.VENTA
+        lecturas.add((n, unidad))
+    return lecturas.pop() if len(lecturas) == 1 else None
+
+
+def palabras_inicio(texto: str) -> list[str]:
+    """Hasta dos primeras palabras de contenido del texto de una mención (sin unidades)."""
+    contenido = palabras(texto, quitar_unidades=True)
+    return [p for p in normalizar(texto).split() if p in contenido][:2]
+
+
+def anclar_cantidades(menciones: Sequence[Mencion], mensajes: Sequence[str]) -> list[Mencion]:
+    """Corrige la cantidad cuando el modelo **no copió** el número del mensaje (D37):
+
+    - `cantidad = null` pero el mensaje dice "2 cajas de cloro" → 2.
+    - una cantidad que no aparece en la conversación ni en cifras ni en letras (el modelo
+      multiplicó: "2 docenas" → 24) y el mensaje pone otra justo antes del producto → esa,
+      con la unidad que la acompaña.
+
+    Conservador: solo `agregar`, solo si el producto aparece en **una** sola mención (las
+    correcciones y repeticiones dicen el número después: "de X son 16") y solo si el mensaje
+    tiene una única lectura."""
+    texto = normalizar_suave(" ".join(mensajes))
+    numeros = _numeros_de(" ".join(mensajes))
+    claves = [m.sku if m.resolucion == Resolucion.SKU else normalizar(m.texto) for m in menciones]
+    resultado = []
+    for m, clave in zip(menciones, claves, strict=True):
+        if (
+            m.accion == Accion.AGREGAR
+            and claves.count(clave) == 1
+            and (m.cantidad is None or m.cantidad not in numeros)
+        ):
+            lectura = _cantidad_en_mensaje(m, texto)
+            if lectura is not None and lectura != (m.cantidad, m.unidad):
+                cantidad, unidad = lectura
+                m = m.model_copy(update={"cantidad": cantidad, "unidad": unidad})
+        resultado.append(m)
+    return resultado
 
 
 @dataclass
@@ -227,10 +354,53 @@ class ResolvedorProductos:
         buscadas = palabras(texto, quitar_unidades=True)
         if not buscadas:
             return []
+        completas = palabras(texto)
+        if completas != buscadas:
+            # Una palabra de empaque puede ser parte del nombre ("arroz ceiba quintal" → A02):
+            # si con ella hay candidatos, se usan; si no, se ignora ("fardo de kola 600").
+            con_unidades = self._que_contienen(completas)
+            if con_unidades:
+                return con_unidades
+        return self._que_contienen(buscadas)
+
+    def _que_contienen(self, buscadas: set[str]) -> list[str]:
         return sorted(
             sku
             for sku, vocab in self._palabras_sku.items()
             if all(formas(p) & vocab for p in buscadas)
+        )
+
+    def desambiguar_por_contexto(self, m: Mencion, mensajes: Sequence[str]) -> Mencion:
+        """Un `ambiguo` cuyo texto en el mensaje va **inmediatamente** seguido o precedido de una
+        palabra o número que solo tiene una de las opciones ("papel suave 4: 3" → L04, "un
+        quintal de arroz" → A02) se resuelve a esa opción (D37). El número que es la cantidad
+        de la mención no cuenta ("cocas 3", "2 de frijol"). Solo si el texto aparece una sola
+        vez en la conversación."""
+        if m.resolucion != Resolucion.AMBIGUO or len(m.opciones) < 2:
+            return m
+        inicio = [p for p in normalizar(m.texto).split() if p in palabras(m.texto)]
+        if not inicio:
+            return m
+        texto = normalizar_suave(" ".join(mensajes))
+        nombre = r" +".join(map(re.escape, inicio))
+        if len(re.findall(r"\b" + nombre + r"\b", texto)) != 1:
+            return m  # el texto aparece varias veces ("pasta: 2 … pasta dental"): no se adivina
+        despues = r"\b" + nombre + r" +([a-z0-9][a-z0-9.]*)"
+        antes = r"([a-z0-9][a-z0-9.]*) +(?:de +)?" + nombre + r"\b"
+        fichas = [x.group(1) for x in re.finditer(despues, texto)]
+        fichas += [x.group(1) for x in re.finditer(antes, texto)]
+        elegidos = set()
+        for ficha in fichas:
+            ficha = ficha.rstrip(".")
+            if ficha == str(m.cantidad) or ficha in _VACIAS:
+                continue
+            tienen = [o for o in m.opciones if formas(ficha) & self._palabras_sku.get(o, set())]
+            if len(tienen) == 1:
+                elegidos.add(tienen[0])
+        if len(elegidos) != 1:
+            return m
+        return m.model_copy(
+            update={"resolucion": Resolucion.SKU, "sku": elegidos.pop(), "opciones": []}
         )
 
     def difuso(self, texto: str) -> str | None:
@@ -284,6 +454,11 @@ class ResolvedorProductos:
         if m.resolucion == Resolucion.AMBIGUO:
             validas = [o for o in m.opciones if o in productos]
             cands = self.candidatos(texto)
+            if len(cands) == 1:
+                # El texto ya distingue un solo producto ("arroz ceiba quintal" → A02).
+                return m.model_copy(
+                    update={"resolucion": Resolucion.SKU, "sku": cands[0], "opciones": []}
+                )
             if len(cands) >= 2:
                 validas = sorted(set(validas) | set(cands))
             return m.model_copy(update={"opciones": validas, "sku": None})
@@ -310,7 +485,8 @@ class ResolvedorProductos:
         "naranjitas" → "naranjita 600"), se re-resuelve solo con las palabras que sí aparecen
         en la conversación. Entre los candidatos se elige el único cuyas palabras distintivas
         no numéricas (p. ej. "instantaneo") aparecen en la conversación; si no hay uno solo,
-        queda `ambiguo`. Si el texto es literal, no se toca."""
+        queda `ambiguo`. Si el texto es literal, no se toca. Si **ninguna** palabra del texto
+        aparece en la conversación, el modelo inventó el producto: pasa a `no_existe`."""
         if m.resolucion != Resolucion.SKU or m.accion == Accion.QUITAR:
             return m
         fichas = [f.strip(".") for f in normalizar(" ".join(mensajes)).split()]
@@ -324,6 +500,10 @@ class ResolvedorProductos:
             for p in buscadas
             if formas(p) & todas or (len(p) >= 4 and any(fuzz.ratio(p, f) >= 80 for f in fichas))
         ]
+        if buscadas and not conservadas:
+            # Ninguna palabra del texto está en la conversación: el modelo inventó el producto.
+            # Nunca se entrega algo que el cliente no nombró; queda como pendiente (D37).
+            return m.model_copy(update={"resolucion": Resolucion.NO_EXISTE, "sku": None})
         if not conservadas or len(conservadas) == len(buscadas):
             return m
         cands = self.candidatos(" ".join(conservadas))
@@ -364,10 +544,13 @@ class ResolvedorProductos:
         self, interpretacion: InterpretacionResuelta, mensajes: Sequence[str] | None = None
     ) -> InterpretacionResuelta:
         """Aplica `resolver_mencion` a cada mención y, si se dan los mensajes, el anclaje al
-        texto literal, la verificación de unidades y la detección de correcciones."""
+        texto literal, el anclaje de cantidades, la verificación de unidades y la detección de
+        correcciones."""
         menciones = [self.resolver_mencion(m) for m in interpretacion.menciones]
         if mensajes is not None:
             menciones = [self.anclar_al_mensaje(m, mensajes) for m in menciones]
+            menciones = [self.desambiguar_por_contexto(m, mensajes) for m in menciones]
+            menciones = anclar_cantidades(menciones, mensajes)
             menciones = verificar_unidades(menciones, mensajes)
             menciones = detectar_correcciones(menciones, mensajes)
         return interpretacion.model_copy(update={"menciones": menciones})
@@ -403,6 +586,9 @@ def detectar_correcciones(menciones: Sequence[Mencion], mensajes: Sequence[str])
 
 __all__ = [
     "MARGEN_DIFUSO",
+    "NUMEROS_EN_LETRAS",
+    "anclar_cantidades",
+    "normalizar_suave",
     "SINONIMOS_PALABRA",
     "UMBRAL_DIFUSO",
     "ResolvedorProductos",

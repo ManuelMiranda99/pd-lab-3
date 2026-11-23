@@ -156,10 +156,10 @@ mensajes ──► [LLM: extracción estructurada] ──► menciones {texto, c
 **Objetivo:** medir con código qué tan bien funciona y subir la exactitud en los 84 casos dev.
 **Requisito PDF:** §3 (calificaciones que miden calidad), evaluación del funcionamiento.
 
-- [ ] F6.1 `eval/calificadores.py`: estado, líneas (sku+cantidad), total, fecha, motivos, pendientes, sustituciones, exactitud completa del caso; latencia.
-- [ ] F6.2 `eval/correr.py`: corre un `.jsonl` contra la API o el intérprete, guarda resultados y un reporte por `tipo`.
-- [ ] F6.3 Iterar: analizar fallos por tipo, ajustar prompt/resolución (no el motor si sus tests pasan). Meta: ≥ 90 % de casos exactos.
-- [ ] F6.4 Calificador del mensaje al cliente (reglas: no menciona agotados prometidos ni precios inventados; opcional juez LLM).
+- [x] F6.1 `eval/calificadores.py`: estado, líneas (sku+cantidad), total, fecha, motivos, pendientes, sustituciones, exactitud completa del caso; latencia.
+- [x] F6.2 `eval/correr.py`: corre un `.jsonl` contra la API o el intérprete, guarda resultados y un reporte por `tipo`.
+- [x] F6.3 Iterar: analizar fallos por tipo, ajustar prompt/resolución (no el motor si sus tests pasan). Meta: ≥ 90 % de casos exactos.
+- [x] F6.4 Calificador del mensaje al cliente (reglas: no menciona agotados prometidos ni precios inventados; opcional juez LLM).
 
 **Verificación manual:** leer el reporte por tipo; revisar 3 fallos restantes y su explicación.
 

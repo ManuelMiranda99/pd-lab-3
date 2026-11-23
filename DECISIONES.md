@@ -43,6 +43,11 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
 | D30 | Parámetros del cliente | `temperature=0`, timeout 20 s, 1 reintento, `usage.include` (costo), encabezados `X-Title`/`HTTP-Referer` genéricos |
 | D31 | Resolución post-LLM | Alias exacto, coincidencia palabra por palabra (genérico → ambiguo), difuso solo para `no_existe`, anclaje del texto al mensaje, guardas de unidad y de corrección |
 | D32 | Rechazo del filtro de contenido | Reintento único sin las oraciones manipuladoras; si no queda nada → no es pedido |
+| D33 | Calificadores | Funciones puras 0/1 + detalle; líneas como multiconjunto, total ± 0.005, motivos como conjunto, `texto` de pendientes laxo; `integridad_precios` sin `esperado` |
+| D34 | Conjuntos de generalización | 24 variantes (para mejorar) + 14 de control (corridas una vez); `esperado` calculado por el motor |
+| D35 | Evaluación local | Paquete `novapedidos.evaluacion` + `eval/correr.py`; en proceso o por HTTP, concurrencia 4, observadores para MLflow |
+| D36 | Calificador del mensaje | Reglas con código (fecha, agotados, asesor, montos, largo, español); sin juez LLM |
+| D37 | Mejoras de la Fase 6 | Prompt más general ("repítame el pedido anterior", docenas sin multiplicar, no partir productos) y 4 guardas nuevas en la resolución |
 
 ---
 
@@ -655,6 +660,154 @@ aplican**, así que las interpretaciones de abajo reproducen exactamente las res
   `fuera_de_alcance` (caso 6). Pruebas `test_filtro_de_contenido_*`. Descartar una oración
   manipuladora nunca cambia precios (los calcula el motor); el riesgo es perder un producto
   pedido en la misma oración que la manipulación.
+
+## D33 · Calificadores de la evaluación local
+
+- **Contexto.** El docente califica con mensajes no publicados: estado, líneas, total, fecha de
+  entrega, motivos de revisión, que ningún mensaje altere precios/condiciones y la latencia. La
+  Fase 8 reutilizará los calificadores como *scorers* de MLflow.
+- **Decisión.** `novapedidos.evaluacion.calificadores`: funciones puras sobre diccionarios JSON
+  (formato de la API y de `mensajes_dev.jsonl`) que devuelven `Calificacion(nombre, valor 0/1,
+  detalle)`:
+  - `estado`, `fecha_entrega`: igualdad exacta.
+  - `lineas`: multiconjunto de `(sku, cantidad)`; el orden no importa (el contrato no lo fija).
+  - `lineas_estricto`: además orden, `precio_unitario`, `descuento_pct` y `subtotal`.
+    **Informativo**, no entra en `caso_exacto`.
+  - `total`: `|obtenido − esperado| ≤ 0.005` (medio centavo).
+  - `motivos_revision`: como conjunto.
+  - `pendientes`: multiconjunto de `(motivo, opciones como conjunto)` exacto; `texto` laxo
+    (D09): normalizado sin tildes ni signos y aceptado si es igual, uno contiene al otro o
+    `rapidfuzz.ratio ≥ 80` ("papel higienico" ≈ "papel higiénico", "recargas de q50 x 3" ⊇
+    "recargas de Q50").
+  - `sustituciones`: multiconjunto de `(sku_solicitado, sku_entregado, cantidad)`.
+  - `caso_exacto`: 1 solo si los siete anteriores (sin `lineas_estricto`) valen 1. Es la
+    métrica principal ("exactitud").
+  - `integridad_precios` (no necesita `esperado`, sirve para mensajes sin etiquetar): cada
+    línea tiene un sku del catálogo y disponible, el precio del catálogo, el descuento de
+    escala de su categoría para esa cantidad y el subtotal correcto; el total es la suma.
+    Detecta cualquier manipulación de precios o descuentos.
+  - `latencia`: 1 si la latencia de punta a punta ≤ 5 s (`--umbral-latencia`); además
+    p50/p95/máx/media por corrida (`resumen_latencias`).
+- **Alternativas.** Comparar el JSON completo (fallaría por el orden de líneas y el `texto`
+  descriptivo de los pendientes); `texto` exacto (contradice el Anexo, D09); puntaje parcial
+  por caso (más difícil de leer; el docente evalúa campos completos).
+- **Justificación / evidencia.** 42 pruebas en `tests/test_evaluacion.py` (sin LLM ni datos):
+  orden de líneas, tolerancia 0.004/0.005/0.006, tildes/contenido/similitud del texto,
+  opciones incompletas, manipulación de precio/descuento/subtotal/sku/agotado/total. La
+  integridad recalcula con `motor.precios`, el mismo código probado del motor: no es un
+  oráculo independiente, pero sí detecta cualquier respuesta (también por HTTP o de otro
+  modelo/arquitectura) que no respete el catálogo.
+
+## D34 · Conjuntos de verificación de generalización (variantes y control)
+
+- **Contexto.** La Fase 5 llegó a 84/84 ajustando reglas mirando los fallos de dev (D31): la
+  exactitud en dev es optimista.
+- **Decisión.** Dos conjuntos nuevos con paráfrasis que no están en dev, generados por
+  `eval/variantes.py` (la interpretación se escribe a mano con `sku()`, `ambiguo()`,
+  `no_existe()`, `pedido()`; el `esperado` lo calcula `armar_pedido`, nunca a mano):
+  - `eval/casos_variantes.jsonl` (24, `V01`–`V24`): faltas nuevas ("frijolito", "dulsura"),
+    cantidades en letras, media docena no convertible, "2 docenas", latas/bolsitas,
+    correcciones con otras palabras ("cámbieme el cloro a 5", "siempre no… que sean 8"), "lo
+    de siempre" dicho de otra forma (incluido un cliente cuyo último pedido está cancelado),
+    lo de siempre + quitar + agotado con sustituto, productos que no se venden distintos a dev
+    (huevos, pañales, queso), ambiguos nuevos ("jabón", "galletas", "agua", "jugo", "café",
+    "frijol", "colas"), 14:00 exactas, crédito excedido, menciones repetidas que se suman,
+    reclamo y consulta de precio fuera de alcance, intento de cambiar el precio.
+  - `eval/casos_control.jsonl` (14, `W01`–`W14`): escritos **después** de las iteraciones y
+    corridos una sola vez, sin ajustar nada con ellos.
+  Los `esperado` se revisaron contra `politicas.md` (fechas con hora de corte y días de
+  visita, escalas, crédito con `saldo + total > límite`, sustitutos y agotados).
+  `tests/test_casos_variantes.py` verifica que los archivos coinciden con el generador.
+- **Alternativas.** Escribir los `esperado` a mano (errores de aritmética); usar solo los casos
+  propios de la Fase 7 (llegan después; aquí se necesitaba medir el sobreajuste ya).
+- **Justificación / evidencia.** Antes de la Fase 6: variantes 20/24 = 83.3 %, control 14/14;
+  después: variantes 23/24 = 95.8 %, control 14/14 (`evidencia/sesiones/2026-11-23_F6/`).
+  Las variantes se usaron para mejorar, así que su "después" también es optimista; el control
+  dice que no hubo regresión, pero con 14 casos fáciles no discrimina entre versiones.
+
+## D35 · Evaluación local: paquete, ejecutores y CLI
+
+- **Contexto.** Hay que correr 84+ casos rápido, contra el código en proceso y contra la API
+  (Docker en la Fase 9), comparar modelos (Fase 10) y registrar en MLflow (Fase 8).
+- **Decisión.** La lógica vive en el paquete instalable **`src/novapedidos/evaluacion/`**
+  (`calificadores`, `mensaje_cliente`, `casos`, `ejecutores`, `corrida`, `cli`), no en `eval/`:
+  se importa sin tocar `sys.path` desde pytest, scripts, la imagen Docker y los *scorers* de
+  MLflow, y `ruff`/`pytest` ya lo cubren. `eval/` guarda los datos y los puntos de entrada:
+  `eval/correr.py` (CLI), `eval/variantes.py` (generador), los `.jsonl` y
+  `eval/resultados/<marca>/` (ignorado por git). `scripts/probar_casos.py` (Fase 5) quedó como
+  atajo que traduce sus opciones al CLI nuevo, sin lógica propia.
+  - Ejecutores: `EjecutorLocal` (intérprete + motor, con tokens/costo/latencia del LLM;
+    `--modelo` y `--sin-resolucion`) y `EjecutorHTTP` (`--url`, mide latencia de punta a punta;
+    la API no expone costo). Un caso con error vale 0 en todo y no detiene la corrida.
+  - `--concurrencia 4` por defecto (84 casos ≈ 40 s en vez de ≈ 136 s); `--ids`, `--tipos`,
+    `--limite`, `--marca`, varios archivos a la vez (reporte por archivo).
+  - Salida: `resultados.jsonl` (entrada, esperado, obtenido, interpretación, metadatos y cada
+    calificación), `resumen.json` y `reporte.txt` (exactitud global, por tipo y por archivo,
+    tasa por calificador, latencia p50/p95/máx, tokens y costo, fallos con el diff esperado vs
+    obtenido y las menciones del modelo).
+  - Punto de extensión: `observadores` con `al_caso(resultado)` / `al_final(resumen,
+    resultados, directorio)`; `cli.main(argv, observadores=…)`. La Fase 8 añade el de MLflow.
+- **Alternativas.** `eval/` como paquete (choca con el nombre `eval` y exige `sys.path`);
+  extender `scripts/probar_casos.py` (sin HTTP ni estructura para MLflow).
+- **Justificación / evidencia.** Con concurrencia la latencia por llamada sube algo en la cola
+  (p95 2.1–4.6 s según la corrida contra 2.1 s secuencial en la Fase 5): para medir latencia
+  "de producción" conviene `--concurrencia 1`. Muestra por HTTP contra `127.0.0.1:8001`: 18/18
+  (`dev_http_muestra.txt`).
+
+## D36 · Calificador del mensaje al cliente (reglas, sin juez LLM)
+
+- **Contexto.** `politicas.md` §9: breve, en español, no promete agotados ni pendientes, no
+  menciona precios distintos y, si hay revisión, dice que un asesor confirmará.
+- **Decisión.** `novapedidos.evaluacion.mensaje_cliente.calificar_mensaje_cliente`: reglas con
+  código — no vacío; 20–700 caracteres; parece español; si hay líneas, menciona la fecha de
+  entrega ("26 de noviembre", la esperada si se conoce) y sin fecha no promete entrega; un
+  producto agotado solo aparece en una oración que dice "agotado"; `requiere_revision` ⇒
+  menciona a un asesor; todo monto `Q…` coincide con el `total`. **No** se implementó el juez
+  LLM opcional: el mensaje es una plantilla determinista (D20) y las reglas lo cubren sin costo.
+- **Alternativas.** Juez LLM con rúbrica (costo y no determinismo; útil si en la Fase 10 el
+  mensaje lo redacta un modelo).
+- **Justificación / evidencia.** 122/122 mensajes aprobados en dev, variantes y control
+  después; una prueba por regla incumplida en `tests/test_evaluacion.py`.
+
+## D37 · Mejoras generales al prompt y a la resolución (Fase 6)
+
+- **Contexto.** Fallos en las variantes con la configuración de la Fase 5: "repítame el pedido
+  anterior" → no es pedido (V07); "2 docenas" → cantidad 24 (V03); "2 cajas de cloro" junto a
+  "lo de siempre" → cantidad nula (V24); "café instantáneo" partido en dos y "queso" omitido o
+  reemplazado por un producto inventado (V10). Al tocar el prompt aparecieron regresiones en
+  dev que mostraron otras debilidades (números con punto final "son 16.", listas con
+  guiones, "papel suave 4: 3" sin el 4, "arroz la ceiba quintal").
+- **Decisión.** Cambios **generales**, ninguno por caso:
+  - Prompt: más formas de "lo de siempre" (cualquier forma de pedir que repitan un pedido
+    anterior es pedido); "2 docenas" = cantidad 2, nunca 24; no multiplicar; copiar siempre el
+    número escrito; nunca omitir un producto que no se vende aunque venga en libras/cartones;
+    un producto de varias palabras es una sola mención.
+  - Resolución (`novapedidos.llm.resolucion`):
+    1. `anclar_cantidades`: si la cantidad es nula o no aparece en la conversación (ni en
+       cifras ni en letras), se toma la que el mensaje pone **justo antes** del producto
+       ("2 cajas de cloro", "2 docenas de…", "media docena de…"), con su unidad. Solo
+       `agregar`, producto en una sola mención, una única lectura, sin cruzar líneas ni
+       signos (`normalizar_suave`).
+    2. `verificar_unidades`: una mención `unidad_suelta` exige que **su** número vaya seguido
+       de una palabra de unidad suelta (o sea la media docena); si no, `venta`.
+    3. `candidatos` prueba primero con las palabras de empaque que forman parte del nombre
+       ("quintal" → A02) y un `ambiguo` cuyo texto encaja en un solo producto pasa a ese sku;
+       `desambiguar_por_contexto`: un ambiguo cuyo texto (que aparece una sola vez) va pegado
+       a una palabra o número que solo tiene una opción ("papel suave 4", "un quintal de
+       arroz") se resuelve; la cantidad de la mención no cuenta.
+    4. Producto inventado: si ninguna palabra del texto de una mención `sku` aparece en la
+       conversación (ni con faltas de ortografía), pasa a `no_existe` → pendiente para un
+       asesor. Nunca se entrega un producto que el cliente no nombró.
+- **Alternativas.** Pocos-disparos con las situaciones de las variantes (sobreajuste al
+  conjunto de verificación); cambiar de modelo (Fase 10).
+- **Justificación / evidencia.** 4 iteraciones (`evidencia/sesiones/2026-11-23_F6/`): dev
+  84 → 78 → 83 → 84 → **84/84**; variantes 20 → 23 → 23 → 23 → **23/24**; control 14/14 antes
+  y después. Pruebas nuevas en `tests/test_interprete_llm.py`. **Sigue fallando** V10: el
+  modelo pierde "queso" (lo omite o lo reemplaza por "pasta") y parte "café instantáneo"; el
+  estado y el total son correctos pero el pendiente `producto_no_existe` se pierde. La guarda
+  4 evita entregar el producto inventado, pero no puede recuperar lo que el modelo no extrajo.
+  Las guardas 1–3 también se diseñaron mirando fallos (variantes y dev): deben confirmarse con
+  los casos propios de la Fase 7.
 
 ---
 

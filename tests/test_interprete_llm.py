@@ -30,6 +30,7 @@ from novapedidos.llm.interprete import InterpreteLLM, crear_interprete_llm
 from novapedidos.llm.prompt import EJEMPLOS, bloque_mensajes, mensaje_usuario, prompt_sistema
 from novapedidos.llm.resolucion import (
     ResolvedorProductos,
+    anclar_cantidades,
     detectar_correcciones,
     verificar_unidades,
 )
@@ -456,6 +457,85 @@ def test_detectar_correcciones():
     assert corregida[1].accion == Accion.CORREGIR
     sumada = detectar_correcciones([a, b], ["4 de sal pacifico", "y otros 6 de sal pacifico 1 lb"])
     assert sumada[1].accion == Accion.AGREGAR
+
+
+def _mn(texto, sku=None, cantidad=None, unidad=Unidad.VENTA, accion=Accion.AGREGAR, **extra):
+    resolucion = extra.pop("resolucion", Resolucion.SKU if sku else Resolucion.AMBIGUO)
+    return Mencion(
+        texto=texto,
+        resolucion=resolucion,
+        sku=sku,
+        cantidad=cantidad,
+        unidad=unidad,
+        accion=accion,
+        **extra,
+    )
+
+
+def test_anclar_cantidades_recupera_el_numero_del_mensaje():
+    # cantidad omitida por el modelo
+    (m,) = anclar_cantidades(
+        [_mn("aceite dorado", "A06")], ["lo de siempre y 2 cajas de aceite dorado"]
+    )
+    assert (m.cantidad, m.unidad) == (2, Unidad.VENTA)
+    # el modelo multiplicó las docenas
+    (m,) = anclar_cantidades(
+        [_mn("kola 600", "B01", 24, Unidad.DOCENA)], ["2 docenas de kola 600 porfa"]
+    )
+    assert (m.cantidad, m.unidad) == (2, Unidad.DOCENA)
+    # número en letras presente: no se toca
+    m = _mn("kola 600", "B01", 9)
+    assert anclar_cantidades([m], ["nueve de kola 600."]) == [m]
+
+
+def test_anclar_cantidades_es_conservador():
+    # sin número antes del producto ("y unas kolas") queda null
+    m = _mn("kola 600", "B01")
+    assert anclar_cantidades([m], ["y unas kola 600"]) == [m]
+    # no cruza líneas de una lista ("energia max: 4\n- kola 600")
+    m = _mn("kola 600", "B01")
+    assert anclar_cantidades([m], ["- energia max: 4\n- kola 600"]) == [m]
+    # correcciones y productos repetidos no se tocan (el número va después: "son 9")
+    a, b = _mn("kola 600", "B01", 6), _mn("kola 600", "B01", None, accion=Accion.CORREGIR)
+    assert anclar_cantidades([a, b], ["6 fardos de kola 600", "de kola 600 son 9."]) == [a, b]
+
+
+def test_verificar_unidades_exige_el_numero_junto_a_la_unidad_suelta():
+    bolsas = _mn("detergente espumoso", "L01", 48, Unidad.UNIDAD_SUELTA)
+    kola = _mn("kola 600", "B01", 4, Unidad.UNIDAD_SUELTA)
+    res = verificar_unidades([bolsas, kola], ["48 bolsas de detergente espumoso y 4 de kola 600"])
+    assert res[0].unidad == Unidad.UNIDAD_SUELTA
+    assert res[1].unidad == Unidad.VENTA
+    media = _mn("kola 600", "B01", 6, Unidad.UNIDAD_SUELTA)
+    assert verificar_unidades([media], ["media docena de kola 600"])[0] == media
+
+
+def test_desambiguar_por_contexto(datos):
+    r = ResolvedorProductos(datos)
+    kola = _mn("kola", cantidad=3, opciones=["B01", "B02"])
+    (m,) = r.resolver(
+        InterpretacionResuelta(es_pedido=True, menciones=[kola]), ["kola 1.5: 3"]
+    ).menciones
+    assert m.resolucion == Resolucion.SKU and m.sku == "B02"
+    # el texto aparece dos veces: no se adivina
+    (m,) = r.resolver(
+        InterpretacionResuelta(es_pedido=True, menciones=[kola]), ["3 kola", "y kola 1.5 no"]
+    ).menciones
+    assert m.resolucion == Resolucion.AMBIGUO
+    # la cantidad no cuenta como presentación
+    kola1 = _mn("kola", cantidad=600, opciones=["B01", "B02"])
+    (m,) = r.resolver(
+        InterpretacionResuelta(es_pedido=True, menciones=[kola1]), ["kola 600"]
+    ).menciones
+    assert m.resolucion == Resolucion.AMBIGUO
+
+
+def test_producto_inventado_por_el_modelo_no_se_entrega(datos):
+    r = ResolvedorProductos(datos)
+    inventado = _mn("detergente espumoso", "L01", 2)
+    interp = InterpretacionResuelta(es_pedido=True, menciones=[inventado])
+    (m,) = r.resolver(interp, ["2 libras de queso y nada más"]).menciones
+    assert m.resolucion == Resolucion.NO_EXISTE and m.sku is None
 
 
 # --------------------------------------------------------------------------- inyección

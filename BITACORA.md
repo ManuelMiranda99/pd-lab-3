@@ -224,3 +224,34 @@
 ### Próxima sesión
 - Fase 6 (evaluación local) y Fase 7 (casos propios) para medir sobreajuste; probar modelos fuera de Azure.
 - Fase 9: parar el contenedor que ocupa el puerto 8000.
+
+---
+
+## Sesión 2026-11-23 — Fase 6 (inicio)
+**Fase:** 6 — Evaluación local y mejora de calidad
+**Estado al cerrar:** Fase 6 cerrada ✅ (subagente; verificada por la sesión principal)
+
+### Logrado
+- F6.1 `src/novapedidos/evaluacion/calificadores.py`: estado, líneas, total (±0.005), fecha, motivos, pendientes (texto laxo), sustituciones, caso_exacto, integridad_precios, latencia.
+- F6.2 `eval/correr.py` (en proceso o por HTTP con `--url`, `--modelo`, `--concurrencia`); resultados en `eval/resultados/<marca>/`.
+- F6.3 `eval/casos_variantes.jsonl` (24 paráfrasis nuevas) y `eval/casos_control.jsonl` (14); mejoras generales al prompt y a la resolución.
+- F6.4 Calificador de `mensaje_cliente` por reglas.
+
+### Verificación
+- pytest: 442 pasan · ruff ok.
+- dev 84/84 · variantes 20/24 → 23/24 · control 14/14 (re-ejecutado por la sesión principal: 14/14).
+- integridad_precios y mensaje_cliente: 100 %. Gasto ≈ USD 0.14.
+
+### Lo que falló
+- Iteración 1 bajó dev a 78/84 (bug al anclar cantidades con punto final y listas) · resuelto en iteraciones 2–3.
+- V10 ("una libra de queso y 2 de café instantáneo") sigue fallando: el modelo omite "queso" · sin resolver.
+- Latencia de cola: en la verificación de la sesión principal el control dio p95 8.05 s, máx 10.6 s (4 hilos) · investigar en Fase 7/10.
+
+### Capturas
+- evidencia/sesiones/2026-11-23_F6/resumen_fase6.md y reportes antes/después.
+
+### Decisiones tomadas
+- D33–D37 (calificadores, variantes con esperado del motor, paquete `novapedidos.evaluacion`, mensaje por reglas, guardas nuevas).
+
+### Próxima sesión
+- Fase 7: casos propios; medir antes de ajustar; investigar latencia de cola.

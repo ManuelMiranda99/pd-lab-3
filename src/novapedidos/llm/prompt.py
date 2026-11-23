@@ -72,7 +72,10 @@ tamaño y faltas de ortografía), sin la cantidad, sin la unidad de empaque y si
 q50"). Nunca lo reemplaces por el nombre del catálogo ni lo acortes: si el cliente escribió \
 "aceite dorado", el texto es "aceite dorado", no "aceite".
 - Cada producto pedido es una mención, también los que NO se venden: nunca omitas un \
-producto (cerveza, recargas, gas…); van con resolucion="no_existe".
+producto (cerveza, recargas, gas…), aunque lo pida en libras, cartones, paquetes u otra \
+medida que la distribuidora no usa; van con resolucion="no_existe".
+- Un producto de varias palabras ("café instantáneo", "papel higiénico", "harina de maíz") \
+es UNA sola mención: nunca lo partas en dos menciones.
 
 CANTIDADES Y UNIDADES:
 - cantidad = el número dicho, en cifras o en letras ("dos" = 2, "una" = 1). Si no dice \
@@ -83,10 +86,12 @@ cantidad ("y unas manías", "y chicharritos"), cantidad = null.
 unidades o piezas sueltas ("48 latas", "36 botellas"). "Media docena" = cantidad 6 en \
 unidad_suelta. Si "sobre" o "bolsita" forma parte del nombre del producto ("shampoo brisa \
 sobre 10 ml"), no es la unidad.
-- unidad = "docena" para "una docena", "2 docenas" (cantidad = número de docenas).
+- unidad = "docena" para "una docena", "2 docenas" (cantidad = número de docenas: "2 \
+docenas" = cantidad 2, NUNCA 24).
 - La presentación del producto ("500 ml", "600", "1.5 L", "64 g", "5 lb", "12 rollos") es \
 parte del nombre, NUNCA una unidad suelta: "6 te frio quetzal limon 500 ml" = 6 en "venta".
-- No conviertas ni redondees: copia lo que dijo el cliente; el sistema convierte.
+- No conviertas, no multipliques ni redondees: copia el número que dijo el cliente; el \
+sistema convierte. Si el número está escrito, cópialo siempre ("2 cajas de cloro" = 2).
 
 ACCIONES:
 - "agregar": lo normal, también "y también", "ah y", "apúnteme". Si repite un producto para \
@@ -99,7 +104,9 @@ con la NUEVA cantidad y accion="corregir" (no borres la mención original).
 
 "LO DE SIEMPRE":
 - lo_de_siempre=true si pide "lo de siempre", "lo mismo de la otra vez/la vez pasada", "lo \
-mismo del último pedido", "mi pedido de siempre", "lo de cada semana" o similar. NO lo \
+mismo del último pedido", "mi pedido de siempre", "lo de cada semana", "repítame el pedido \
+anterior", "lo que siempre le pido", "otra vez lo mismo" o cualquier otra forma de pedir que \
+le repitan un pedido anterior (eso SÍ es un pedido: es_pedido=true). NO lo \
 conviertas en menciones: el sistema busca su último pedido. Los agregados ("y 2 de X") y \
 exclusiones ("sin X") van como menciones normales.
 - menciones_antes_de_lo_de_siempre = cuántas menciones aparecen antes de esa expresión \

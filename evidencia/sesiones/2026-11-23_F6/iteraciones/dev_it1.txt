@@ -1,0 +1,112 @@
+Evaluación · dev_it1 · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: ejemplos/mensajes_dev.jsonl · casos: 84 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 78/84 = 92.9 %
+
+Exactitud por tipo:
+  agotado                6/6   100.0 %
+  ambiguo                7/7   100.0 %
+  audio                  3/3   100.0 %
+  correccion             6/7    85.7 %
+  credito                5/5   100.0 %
+  fuera_de_alcance       5/5   100.0 %
+  habitual               8/8   100.0 %
+  no_existe              4/4   100.0 %
+  simple                18/19   94.7 %
+  sin_cantidad           3/4    75.0 %
+  unidades               8/9    88.9 %
+  varios_mensajes        5/7    71.4 %
+
+Por calificador:
+  caso_exacto           78/84   92.9 %
+  estado                80/84   95.2 %
+  lineas                79/84   94.0 %
+  total                 79/84   94.0 %
+  fecha_entrega         84/84  100.0 %
+  motivos_revision      80/84   95.2 %
+  pendientes            81/84   96.4 %
+  sustituciones         84/84  100.0 %
+  lineas_estricto       78/84   92.9 %
+  integridad_precios    84/84  100.0 %
+  mensaje_cliente       84/84  100.0 %
+  latencia              84/84  100.0 %
+
+Latencia por pedido (punta a punta): p50 1.44 s · p95 1.93 s · máx 2.51 s · media 1.48 s
+Latencia de la llamada al LLM: p50 1.44 s · p95 1.93 s · máx 2.50 s
+Tokens entrada/salida (en caché): 463650 / 11702 (430592)
+Costo total: USD 0.020904 · por caso USD 0.000249
+Duración de la corrida: 31.8 s
+
+Fallos (6):
+✗ D062 [correccion] C033 2026-12-11T09:27
+    mensajes: ['hola, me puede mandar 15 cajas de jabon lavandero, 3 nutrimezcla 450 g y 2 aceite dorado. corrijo: de jabón de barra lavandero 350 g son 16. gracias, que esté bien']
+    - estado: confirmado ≠ requiere_revision
+    - lineas: faltan [('L02', 16)]; sobran [('L02', 15)]
+    - total: 3774.0 ≠ 3964.0
+    - motivos_revision: [] ≠ ['credito_excedido']
+    - lineas_estricto: línea 1: cantidad 15 ≠ 16, subtotal 2850.0 ≠ 3040.0
+    esperado: requiere_revision · líneas [L02×16, A14×3, A06×2] · total 3964.0 · fecha 2026-12-14 · motivos ['credito_excedido'] · pendientes [∅]
+    obtenido: confirmado · líneas [L02×15, A14×3, A06×2] · total 3774.0 · fecha 2026-12-14 · motivos [] · pendientes [∅]
+      · 'jabon lavandero' → sku L02 · 15 venta · agregar
+      · 'nutrimezcla' → sku A14 · 3 venta · agregar
+      · 'aceite dorado' → sku A06 · 2 venta · agregar
+      · 'jabon lavandero' → sku L02 · 15 venta · corregir
+✗ D068 [sin_cantidad] C023 2026-12-09T11:43
+    mensajes: ['Buenas seño, le paso el pedido:\n- jabon rosa: 3\n- mani la finca: 4\n- sopa rapida. saludos']
+    - lineas: faltan [('A15', 1)]; sobran [('A15', 4)]
+    - total: 1224.0 ≠ 864.0
+    - lineas_estricto: línea 3: cantidad 4 ≠ 1, subtotal 480.0 ≠ 120.0
+    esperado: confirmado · líneas [P01×3, S06×4, A15×1] · total 864.0 · fecha 2026-12-12 · motivos [] · pendientes [∅]
+    obtenido: confirmado · líneas [P01×3, S06×4, A15×4] · total 1224.0 · fecha 2026-12-12 · motivos [] · pendientes [∅]
+      · 'jabon rosa' → sku P01 · 3 venta · agregar
+      · 'mani la finca' → sku S06 · 4 venta · agregar
+      · 'sopa rapida' → sku A15 · 4 venta · agregar
+✗ D072 [simple] C030 2026-12-02T11:33
+    mensajes: ['Me manda papel suave 4: 3, limonada volcán 600 ml: 6, 20 fardos de naranjita 1.5 y 2 de azúcar dulzura. saludos']
+    - estado: requiere_revision ≠ confirmado
+    - lineas: faltan [('L04', 3)]
+    - total: 3608.0 ≠ 4256.0
+    - motivos_revision: ['producto_ambiguo'] ≠ []
+    - pendientes: sobran [('producto_ambiguo', ('L04', 'L05'))]
+    - lineas_estricto: 3 líneas ≠ 4
+    esperado: confirmado · líneas [L04×3, B06×6, B05×20, A05×2] · total 4256.0 · fecha 2026-12-03 · motivos [] · pendientes [∅]
+    obtenido: requiere_revision · líneas [B06×6, B05×20, A05×2] · total 3608.0 · fecha 2026-12-03 · motivos ['producto_ambiguo'] · pendientes [producto_ambiguo«papel suave»['L04', 'L05']]
+      · 'papel suave' → ambiguo ['L04', 'L05'] · 3 venta · agregar
+      · 'limonada volcan' → sku B06 · 6 venta · agregar
+      · 'naranjita 1.5' → sku B05 · 20 venta · agregar
+      · 'azucar dulzura' → sku A05 · 2 venta · agregar
+✗ D073 [varios_mensajes] C030 2026-12-08T07:41
+    mensajes: ['Hola buen día, mándeme agua pura cristal 600 ml: 2 y 6 cajas de jabón rosa', 'Le hago mi pedido: 3 de naranjita 600', 'Corrijo: de jaabón de tocador rosa 100 g son nueve. Dios lo bendiga']
+    - lineas: faltan [('P01', 9)]; sobran [('P01', 6)]
+    - total: 1427.76 ≠ 1916.64
+    - lineas_estricto: línea 2: cantidad 6 ≠ 9, subtotal 977.76 ≠ 1466.64
+    esperado: confirmado · líneas [B07×2, P01×9, B04×3] · total 1916.64 · fecha 2026-12-10 · motivos [] · pendientes [∅]
+    obtenido: confirmado · líneas [B07×2, P01×6, B04×3] · total 1427.76 · fecha 2026-12-10 · motivos [] · pendientes [∅]
+      · 'agua pura cristal 600' → sku B07 · 2 venta · agregar
+      · 'jabón rosa' → sku P01 · 6 venta · agregar
+      · 'naranjita 600' → sku B04 · 3 venta · agregar
+      · 'jabón rosa' → sku P01 · 6 venta · corregir
+✗ D074 [unidades] C018 2026-11-26T06:00
+    mensajes: ['Para esta semana:\n- sal pacifico: 5\n- 48 bolsas de detergente espumoso\n- 4 de jaabon lavandero. saludos']
+    - estado: requiere_revision ≠ confirmado
+    - lineas: faltan [('L02', 4)]
+    - total: 895.5 ≠ 1695.5
+    - motivos_revision: ['cantidad_no_convertible'] ≠ []
+    - pendientes: sobran [('cantidad_no_convertible', ('L02',))]
+    - lineas_estricto: 2 líneas ≠ 3
+    esperado: confirmado · líneas [A11×5, L01×2, L02×4] · total 1695.5 · fecha 2026-11-28 · motivos [] · pendientes [∅]
+    obtenido: requiere_revision · líneas [A11×5, L01×2] · total 895.5 · fecha 2026-11-28 · motivos ['cantidad_no_convertible'] · pendientes [cantidad_no_convertible«jabon lavandero»['L02']]
+      · 'sal pacifico' → sku A11 · 5 venta · agregar
+      · 'detergente espumoso' → sku L01 · 48 unidad_suelta · agregar
+      · 'jabon lavandero' → sku L02 · 4 unidad_suelta · agregar
+✗ D076 [varios_mensajes] C039 2026-12-10T10:40
+    mensajes: ['Hola, le hago mi pedido: arroz la ceiba quintal: 4', 'me hace favor de mandarme naranjita 1.5 l: 1', 'Ah no, de arroz quintal mejor 6. gracias']
+    - estado: requiere_revision ≠ confirmado
+    - motivos_revision: ['producto_ambiguo'] ≠ []
+    - pendientes: sobran [('producto_ambiguo', ('A01', 'A02'))]
+    - lineas_estricto: línea 1: sku B05 ≠ A02, cantidad 1 ≠ 6, descuento_pct 0 ≠ 2, precio_unitario 132.0 ≠ 480.0, subtotal 132.0 ≠ 2822.4
+    esperado: confirmado · líneas [A02×6, B05×1] · total 2954.4 · fecha 2026-12-12 · motivos [] · pendientes [∅]
+    obtenido: requiere_revision · líneas [B05×1, A02×6] · total 2954.4 · fecha 2026-12-12 · motivos ['producto_ambiguo'] · pendientes [producto_ambiguo«arroz ceiba quintal»['A01', 'A02']]
+      · 'arroz ceiba quintal' → ambiguo ['A01', 'A02'] · 4 venta · agregar
+      · 'naranjita 1.5' → sku B05 · 1 venta · agregar
+      · 'arroz quintal' → sku A02 · 6 venta · corregir
