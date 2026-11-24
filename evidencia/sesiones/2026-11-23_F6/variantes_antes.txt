@@ -1,0 +1,77 @@
+Evaluación · variantes_antes · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: eval/casos_variantes.jsonl · casos: 24 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 20/24 = 83.3 %
+
+Exactitud por tipo:
+  agotado                1/2    50.0 %
+  ambiguo                5/5   100.0 %
+  audio                  1/1   100.0 %
+  correccion             2/2   100.0 %
+  fuera_de_alcance       2/2   100.0 %
+  habitual               1/3    33.3 %
+  manipulacion           1/1   100.0 %
+  no_existe              1/1   100.0 %
+  simple                 2/2   100.0 %
+  sin_cantidad           1/1   100.0 %
+  unidades               2/3    66.7 %
+  varios_mensajes        1/1   100.0 %
+
+Por calificador:
+  caso_exacto           20/24   83.3 %
+  estado                23/24   95.8 %
+  lineas                21/24   87.5 %
+  total                 21/24   87.5 %
+  fecha_entrega         23/24   95.8 %
+  motivos_revision      23/24   95.8 %
+  pendientes            23/24   95.8 %
+  sustituciones         24/24  100.0 %
+  lineas_estricto       21/24   87.5 %
+  integridad_precios    24/24  100.0 %
+  mensaje_cliente       24/24  100.0 %
+  latencia              24/24  100.0 %
+
+Latencia por pedido (punta a punta): p50 1.45 s · p95 2.36 s · máx 2.74 s · media 1.63 s
+Latencia de la llamada al LLM: p50 1.44 s · p95 2.25 s · máx 2.63 s
+Tokens entrada/salida (en caché): 128669 / 3130 (122880)
+Costo total: USD 0.005517 · por caso USD 0.000230
+Duración de la corrida: 10.4 s
+
+Fallos (4):
+✗ V03 [unidades] C027 2026-11-26T15:30
+    mensajes: ['me manda media docena de cloro blancura y 2 docenas de jabón rosa por fa']
+    - lineas: faltan [('P01', 1)]; sobran [('P01', 12)]
+    - total: 1955.52 ≠ 168.0
+    - lineas_estricto: línea 1: cantidad 12 ≠ 1, descuento_pct 3 ≠ 0, subtotal 1955.52 ≠ 168.0
+    esperado: requiere_revision · líneas [P01×1] · total 168.0 · fecha 2026-11-30 · motivos ['cantidad_no_convertible'] · pendientes [cantidad_no_convertible«cloro blancura»['L03']]
+    obtenido: requiere_revision · líneas [P01×12] · total 1955.52 · fecha 2026-11-30 · motivos ['cantidad_no_convertible'] · pendientes [cantidad_no_convertible«cloro blancura»['L03']]
+      · 'cloro blancura' → sku L03 · 6 unidad_suelta · agregar
+      · 'jabon rosa' → sku P01 · 24 docena · agregar
+✗ V07 [habitual] C024 2026-11-24T12:00
+    mensajes: ['Buenas, repítame el pedido anterior porfa']
+    - estado: fuera_de_alcance ≠ confirmado
+    - lineas: faltan [('A01', 4), ('B02', 2), ('B08', 3), ('B09', 2), ('S06', 2)]
+    - total: 0.0 ≠ 1316.0
+    - fecha_entrega: None ≠ 2026-11-27
+    - lineas_estricto: 0 líneas ≠ 5
+    esperado: confirmado · líneas [A01×4, B02×2, B08×3, B09×2, S06×2] · total 1316.0 · fecha 2026-11-27 · motivos [] · pendientes [∅]
+    obtenido: fuera_de_alcance · líneas [∅] · total 0.0 · fecha None · motivos [] · pendientes [∅]
+      · es_pedido = false
+✗ V10 [agotado] C039 2026-12-09T13:59
+    mensajes: ['Buenas, necesito 3 fardos de harina de maíz, una libra de queso y 2 de café instantáneo']
+    - motivos_revision: ['agotado_sin_sustituto'] ≠ ['agotado_sin_sustituto', 'producto_no_existe']
+    - pendientes: faltan [('producto_no_existe', ())]
+    esperado: requiere_revision · líneas [A08×3] · total 540.0 · fecha 2026-12-12 · motivos ['producto_no_existe', 'agotado_sin_sustituto'] · pendientes [producto_no_existe«queso», agotado_sin_sustituto«Café Altura Instantáneo 50 g»['A13']]
+    obtenido: requiere_revision · líneas [A08×3] · total 540.0 · fecha 2026-12-12 · motivos ['agotado_sin_sustituto'] · pendientes [agotado_sin_sustituto«Café Altura Instantáneo 50 g»['A13']]
+      · 'harina' → sku A08 · 3 venta · agregar
+      · 'cafe' → sku A13 · 1 venta · agregar
+      · 'instantaneo' → sku A13 · 2 venta · agregar
+✗ V24 [habitual] C038 2026-12-10T10:30
+    mensajes: ['Hola don, me manda lo que siempre le pido y 2 cajas de cloro']
+    - lineas: faltan [('L03', 2)]; sobran [('L03', 1)]
+    - total: 2704.0 ≠ 2812.0
+    - lineas_estricto: línea 6: cantidad 1 ≠ 2, subtotal 108.0 ≠ 216.0
+    esperado: confirmado · líneas [A04×1, A12×3, L01×2, P03×4, S01×1, L03×2] · total 2812.0 · fecha 2026-12-14 · motivos [] · pendientes [∅]
+    obtenido: confirmado · líneas [A04×1, A12×3, L01×2, P03×4, S01×1, L03×1] · total 2704.0 · fecha 2026-12-14 · motivos [] · pendientes [∅]
+      · lo_de_siempre (posición 0)
+      · 'cloro' → sku L03 · None venta · agregar

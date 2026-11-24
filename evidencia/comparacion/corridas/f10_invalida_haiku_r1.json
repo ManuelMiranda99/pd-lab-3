@@ -1,0 +1,262 @@
+{
+  "descripcion": "local · modelo anthropic/claude-haiku-4.5 · resolución post-LLM sí · razonamiento proveedor",
+  "casos": 177,
+  "etiquetados": 177,
+  "exactos": 127,
+  "exactitud": 0.7175,
+  "errores": 50,
+  "por_tipo": {
+    "agotado": {
+      "n": 10,
+      "exactos": 8,
+      "exactitud": 0.8
+    },
+    "ambiguo": {
+      "n": 15,
+      "exactos": 12,
+      "exactitud": 0.8
+    },
+    "audio": {
+      "n": 6,
+      "exactos": 4,
+      "exactitud": 0.6667
+    },
+    "borde_regla": {
+      "n": 7,
+      "exactos": 3,
+      "exactitud": 0.4286
+    },
+    "correccion": {
+      "n": 13,
+      "exactos": 12,
+      "exactitud": 0.9231
+    },
+    "credito": {
+      "n": 9,
+      "exactos": 6,
+      "exactitud": 0.6667
+    },
+    "fuera_catalogo": {
+      "n": 10,
+      "exactos": 2,
+      "exactitud": 0.2
+    },
+    "fuera_de_alcance": {
+      "n": 10,
+      "exactos": 7,
+      "exactitud": 0.7
+    },
+    "habitual": {
+      "n": 16,
+      "exactos": 12,
+      "exactitud": 0.75
+    },
+    "inyeccion": {
+      "n": 12,
+      "exactos": 5,
+      "exactitud": 0.4167
+    },
+    "manipulacion": {
+      "n": 2,
+      "exactos": 0,
+      "exactitud": 0.0
+    },
+    "no_existe": {
+      "n": 8,
+      "exactos": 6,
+      "exactitud": 0.75
+    },
+    "simple": {
+      "n": 25,
+      "exactos": 23,
+      "exactitud": 0.92
+    },
+    "sin_cantidad": {
+      "n": 7,
+      "exactos": 5,
+      "exactitud": 0.7143
+    },
+    "unidades": {
+      "n": 16,
+      "exactos": 14,
+      "exactitud": 0.875
+    },
+    "varios_mensajes": {
+      "n": 11,
+      "exactos": 8,
+      "exactitud": 0.7273
+    }
+  },
+  "por_origen": {
+    "casos_control.jsonl": {
+      "n": 14,
+      "exactos": 9,
+      "exactitud": 0.6429
+    },
+    "casos_propios.jsonl": {
+      "n": 55,
+      "exactos": 15,
+      "exactitud": 0.2727
+    },
+    "casos_variantes.jsonl": {
+      "n": 24,
+      "exactos": 19,
+      "exactitud": 0.7917
+    },
+    "mensajes_dev.jsonl": {
+      "n": 84,
+      "exactos": 84,
+      "exactitud": 1.0
+    }
+  },
+  "por_calificador": {
+    "caso_exacto": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "estado": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "lineas": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "total": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "fecha_entrega": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "motivos_revision": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "pendientes": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "sustituciones": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "lineas_estricto": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "integridad_precios": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "mensaje_cliente": {
+      "n": 177,
+      "aprobados": 127,
+      "tasa": 0.7175
+    },
+    "latencia": {
+      "n": 177,
+      "aprobados": 176,
+      "tasa": 0.9944
+    }
+  },
+  "latencia_s": {
+    "n": 177,
+    "p50": 1.215,
+    "p95": 1.708,
+    "max": 5.128,
+    "media": 1.039
+  },
+  "latencia_llm_s": {
+    "n": 177,
+    "p50": 1.214,
+    "p95": 1.659,
+    "max": 5.127,
+    "media": 1.035
+  },
+  "tokens": {
+    "entrada": 993608,
+    "salida": 20629,
+    "cache": 0
+  },
+  "costo_usd": {
+    "total": 1.096753,
+    "por_caso": 0.008704,
+    "casos_con_costo": 126
+  },
+  "duracion_s": 46.8,
+  "fallos": [
+    "V11",
+    "V12",
+    "V16",
+    "V20",
+    "V22",
+    "W06",
+    "W09",
+    "W11",
+    "W12",
+    "W13",
+    "P002",
+    "P003",
+    "P004",
+    "P005",
+    "P006",
+    "P007",
+    "P008",
+    "P013",
+    "P014",
+    "P015",
+    "P016",
+    "P018",
+    "P019",
+    "P021",
+    "P023",
+    "P024",
+    "P025",
+    "P026",
+    "P029",
+    "P030",
+    "P031",
+    "P032",
+    "P034",
+    "P035",
+    "P036",
+    "P038",
+    "P040",
+    "P041",
+    "P042",
+    "P043",
+    "P044",
+    "P045",
+    "P046",
+    "P048",
+    "P049",
+    "P050",
+    "P051",
+    "P052",
+    "P054",
+    "P055"
+  ],
+  "concurrencia": 4,
+  "umbral_latencia_s": 5.0,
+  "marca": "f10_haiku_r1",
+  "archivos": [
+    "ejemplos/mensajes_dev.jsonl",
+    "eval/casos_variantes.jsonl",
+    "eval/casos_control.jsonl",
+    "eval/casos_propios.jsonl"
+  ],
+  "modelo": "anthropic/claude-haiku-4.5",
+  "resolucion_post_llm": true
+}

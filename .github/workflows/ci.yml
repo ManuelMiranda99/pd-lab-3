@@ -29,3 +29,14 @@ jobs:
 
       - name: Pytest (sin datos publicados ni clave de OpenRouter)
         run: uv run pytest -q
+
+  imagen-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Construir la imagen de la API (sin push; sin datos ni .env)
+        run: docker build -t novapedidos-api:ci .
+
+      - name: Validar docker-compose.yml
+        run: docker compose config --quiet

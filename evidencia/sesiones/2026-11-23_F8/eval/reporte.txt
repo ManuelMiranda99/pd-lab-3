@@ -1,0 +1,66 @@
+Evaluación · 20261123_f8_nano_completa · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: ejemplos/mensajes_dev.jsonl, eval/casos_variantes.jsonl, eval/casos_control.jsonl, eval/casos_propios.jsonl · casos: 177 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 176/177 = 99.4 %
+
+Exactitud por tipo:
+  agotado               10/10  100.0 %
+  ambiguo               15/15  100.0 %
+  audio                  6/6   100.0 %
+  borde_regla            7/7   100.0 %
+  correccion            13/13  100.0 %
+  credito                9/9   100.0 %
+  fuera_catalogo        10/10  100.0 %
+  fuera_de_alcance      10/10  100.0 %
+  habitual              16/16  100.0 %
+  inyeccion             12/12  100.0 %
+  manipulacion           2/2   100.0 %
+  no_existe              8/8   100.0 %
+  simple                25/25  100.0 %
+  sin_cantidad           7/7   100.0 %
+  unidades              15/16   93.8 %
+  varios_mensajes       11/11  100.0 %
+
+Exactitud por archivo:
+  casos_control.jsonl           14/14  100.0 %
+  casos_propios.jsonl           54/55   98.2 %
+  casos_variantes.jsonl         24/24  100.0 %
+  mensajes_dev.jsonl            84/84  100.0 %
+
+Por calificador:
+  caso_exacto          176/177  99.4 %
+  estado               177/177 100.0 %
+  lineas               176/177  99.4 %
+  total                176/177  99.4 %
+  fecha_entrega        177/177 100.0 %
+  motivos_revision     177/177 100.0 %
+  pendientes           177/177 100.0 %
+  sustituciones        176/177  99.4 %
+  lineas_estricto      176/177  99.4 %
+  integridad_precios   177/177 100.0 %
+  mensaje_cliente      177/177 100.0 %
+  latencia             175/177  98.9 %
+
+Latencia por pedido (punta a punta): p50 1.63 s · p95 2.73 s · máx 7.63 s · media 1.79 s
+Latencia de la llamada al LLM: p50 1.62 s · p95 2.72 s · máx 7.63 s
+Tokens entrada/salida (en caché): 1034276 / 23258 (974464)
+Costo total: USD 0.044518 · por caso USD 0.000253
+Duración de la corrida: 80.0 s
+
+Fallos (1):
+✗ P028 [unidades] C016 2026-11-25T09:00
+    mensajes: ['un par de fardos de kola 600, media docena de kola de 3 litros y quince cajas de sopa']
+    - lineas: faltan [('B02', 1)]; sobran [('B02', 15)]
+    - total: 4063.2 ≠ 2112.0
+    - sustituciones: faltan [('B03', 'B02', 1)]; sobran [('B03', 'B02', 15)]
+    - lineas_estricto: línea 2: cantidad 15 ≠ 1, descuento_pct 3 ≠ 0, subtotal 2095.2 ≠ 144.0
+    esperado: confirmado · líneas [B01×2, B02×1, A15×15] · total 2112.0 · fecha 2026-11-27 · motivos [] · pendientes [∅] · sustituciones [B03→B02×1]
+    obtenido: confirmado · líneas [B01×2, B02×15, A15×15] · total 4063.2 · fecha 2026-11-27 · motivos [] · pendientes [∅] · sustituciones [B03→B02×15]
+      · 'kola 600' → sku B01 · 2 venta · agregar
+      · 'kola de 3 litros' → sku B03 · 0 venta · quitar
+      · 'kola de 3 litros' → sku B03 · 15 venta · agregar
+      · 'sopa' → sku A15 · 15 venta · agregar
+
+Casos exactos con otros calificadores en 0 (2):
+  D040 [habitual] latencia: 7.63 s > 5.00 s
+  W01 [simple] latencia: 7.53 s > 5.00 s

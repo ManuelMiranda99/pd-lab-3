@@ -1,0 +1,106 @@
+Modelo: openai/gpt-4.1-nano · resolución post-LLM: sí · casos: 84 · hilos: 1
+
+OK  D001 unidades           2.35s USD 0.000247
+OK  D002 fuera_de_alcance   1.36s USD 0.000191
+OK  D003 ambiguo            1.47s USD 0.000225
+OK  D004 audio              1.31s USD 0.000225
+OK  D005 ambiguo            1.52s USD 0.000223
+OK  D006 simple             1.21s USD 0.000204
+OK  D007 simple             1.60s USD 0.000262
+OK  D008 ambiguo            1.39s USD 0.000246
+OK  D009 simple             1.44s USD 0.000264
+OK  D010 credito            4.57s USD 0.000210
+OK  D011 simple             1.22s USD 0.000211
+OK  D012 habitual           1.27s USD 0.000203
+OK  D013 simple             1.90s USD 0.000243
+OK  D014 ambiguo            1.37s USD 0.000227
+OK  D015 sin_cantidad       1.35s USD 0.000233
+OK  D016 simple             2.25s USD 0.000212
+OK  D017 habitual           1.20s USD 0.000192
+OK  D018 simple             1.25s USD 0.000211
+OK  D019 simple             1.78s USD 0.000247
+OK  D020 correccion         1.46s USD 0.000226
+OK  D021 correccion         2.14s USD 0.000273
+OK  D022 simple             1.30s USD 0.000211
+OK  D023 credito            2.16s USD 0.000246
+OK  D024 unidades           1.28s USD 0.000212
+OK  D025 habitual           1.20s USD 0.000210
+OK  D026 sin_cantidad       1.48s USD 0.000224
+OK  D027 agotado            1.82s USD 0.000224
+OK  D028 ambiguo            1.38s USD 0.000230
+OK  D029 credito            1.82s USD 0.000224
+OK  D030 habitual           1.75s USD 0.000192
+OK  D031 habitual           1.32s USD 0.000212
+OK  D032 agotado            1.45s USD 0.000244
+OK  D033 habitual           1.67s USD 0.000203
+OK  D034 simple             1.84s USD 0.000242
+OK  D035 simple             1.51s USD 0.000244
+OK  D036 no_existe          1.71s USD 0.000241
+OK  D037 agotado            1.47s USD 0.000223
+OK  D038 fuera_de_alcance   1.11s USD 0.000192
+OK  D039 no_existe          1.49s USD 0.000242
+OK  D040 habitual           1.27s USD 0.000223
+OK  D041 correccion         1.53s USD 0.000248
+OK  D042 agotado            1.60s USD 0.000244
+OK  D043 varios_mensajes    1.50s USD 0.000203
+OK  D044 habitual           1.43s USD 0.000203
+OK  D045 no_existe          1.64s USD 0.000225
+OK  D046 simple             1.54s USD 0.000225
+OK  D047 varios_mensajes    1.74s USD 0.000225
+OK  D048 no_existe          2.73s USD 0.000225
+OK  D049 simple             1.75s USD 0.000225
+OK  D050 unidades           1.35s USD 0.000214
+OK  D051 unidades           1.79s USD 0.000225
+OK  D052 agotado            1.72s USD 0.000223
+OK  D053 audio              1.61s USD 0.000244
+OK  D054 correccion         1.33s USD 0.000227
+OK  D055 simple             1.43s USD 0.000212
+OK  D056 unidades           1.64s USD 0.000226
+OK  D057 simple             1.84s USD 0.000265
+OK  D058 varios_mensajes    1.43s USD 0.000204
+OK  D059 audio              1.44s USD 0.000246
+OK  D060 simple             1.42s USD 0.000225
+OK  D061 unidades           1.24s USD 0.000205
+OK  D062 correccion         1.72s USD 0.000266
+OK  D063 simple             1.27s USD 0.000210
+OK  D064 ambiguo            2.35s USD 0.000223
+OK  D065 unidades           1.35s USD 0.000243
+OK  D066 fuera_de_alcance   1.29s USD 0.000192
+OK  D067 agotado            1.54s USD 0.000245
+OK  D068 sin_cantidad       1.43s USD 0.000241
+OK  D069 fuera_de_alcance   1.23s USD 0.000192
+OK  D070 correccion         1.43s USD 0.000246
+OK  D071 credito            1.48s USD 0.000225
+OK  D072 simple             1.79s USD 0.000265
+OK  D073 varios_mensajes    2.05s USD 0.000268
+OK  D074 unidades           1.39s USD 0.000243
+OK  D075 credito            1.37s USD 0.000223
+OK  D076 varios_mensajes    1.43s USD 0.000249
+OK  D077 varios_mensajes    1.66s USD 0.000287
+OK  D078 sin_cantidad       1.61s USD 0.000223
+OK  D079 simple             1.27s USD 0.000222
+OK  D080 varios_mensajes    1.65s USD 0.000206
+OK  D081 correccion         1.40s USD 0.000244
+OK  D082 ambiguo            1.31s USD 0.000232
+OK  D083 fuera_de_alcance   1.24s USD 0.000191
+OK  D084 unidades           1.64s USD 0.000230
+
+Exactitud por tipo:
+  agotado             6/6   100.0 %
+  ambiguo             7/7   100.0 %
+  audio               3/3   100.0 %
+  correccion          7/7   100.0 %
+  credito             5/5   100.0 %
+  fuera_de_alcance    5/5   100.0 %
+  habitual            8/8   100.0 %
+  no_existe           4/4   100.0 %
+  simple             19/19  100.0 %
+  sin_cantidad        4/4   100.0 %
+  unidades            9/9   100.0 %
+  varios_mensajes     7/7   100.0 %
+
+Exactitud global: 84/84 = 100.0 %
+Latencia por llamada: p50 1.47 s · p95 2.24 s · media 1.58 s
+Tokens entrada/salida: 450882 / 11733
+Costo total: USD 0.019120 (por caso USD 0.000228)
+Duración: 133.2 s

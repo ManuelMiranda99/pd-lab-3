@@ -1,0 +1,214 @@
+{
+  "descripcion": "local · modelo google/gemini-2.5-flash · resolución post-LLM sí · razonamiento no",
+  "casos": 177,
+  "etiquetados": 177,
+  "exactos": 175,
+  "exactitud": 0.9887,
+  "errores": 0,
+  "por_tipo": {
+    "agotado": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "ambiguo": {
+      "n": 15,
+      "exactos": 15,
+      "exactitud": 1.0
+    },
+    "audio": {
+      "n": 6,
+      "exactos": 6,
+      "exactitud": 1.0
+    },
+    "borde_regla": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "correccion": {
+      "n": 13,
+      "exactos": 12,
+      "exactitud": 0.9231
+    },
+    "credito": {
+      "n": 9,
+      "exactos": 9,
+      "exactitud": 1.0
+    },
+    "fuera_catalogo": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "fuera_de_alcance": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "habitual": {
+      "n": 16,
+      "exactos": 16,
+      "exactitud": 1.0
+    },
+    "inyeccion": {
+      "n": 12,
+      "exactos": 12,
+      "exactitud": 1.0
+    },
+    "manipulacion": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "no_existe": {
+      "n": 8,
+      "exactos": 8,
+      "exactitud": 1.0
+    },
+    "simple": {
+      "n": 25,
+      "exactos": 24,
+      "exactitud": 0.96
+    },
+    "sin_cantidad": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "unidades": {
+      "n": 16,
+      "exactos": 16,
+      "exactitud": 1.0
+    },
+    "varios_mensajes": {
+      "n": 11,
+      "exactos": 11,
+      "exactitud": 1.0
+    }
+  },
+  "por_origen": {
+    "casos_control.jsonl": {
+      "n": 14,
+      "exactos": 14,
+      "exactitud": 1.0
+    },
+    "casos_propios.jsonl": {
+      "n": 55,
+      "exactos": 53,
+      "exactitud": 0.9636
+    },
+    "casos_variantes.jsonl": {
+      "n": 24,
+      "exactos": 24,
+      "exactitud": 1.0
+    },
+    "mensajes_dev.jsonl": {
+      "n": 84,
+      "exactos": 84,
+      "exactitud": 1.0
+    }
+  },
+  "por_calificador": {
+    "caso_exacto": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "estado": {
+      "n": 177,
+      "aprobados": 176,
+      "tasa": 0.9944
+    },
+    "lineas": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "total": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "fecha_entrega": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "motivos_revision": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "pendientes": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "sustituciones": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "lineas_estricto": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "integridad_precios": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "mensaje_cliente": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "latencia": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    }
+  },
+  "latencia_s": {
+    "n": 177,
+    "p50": 1.13,
+    "p95": 1.577,
+    "max": 1.962,
+    "media": 1.13
+  },
+  "latencia_llm_s": {
+    "n": 177,
+    "p50": 1.126,
+    "p95": 1.552,
+    "max": 1.96,
+    "media": 1.125
+  },
+  "tokens": {
+    "entrada": 900826,
+    "salida": 23945,
+    "cache": 723605
+  },
+  "costo_usd": {
+    "total": 0.134737,
+    "por_caso": 0.000766,
+    "casos_con_costo": 176
+  },
+  "duracion_s": 50.3,
+  "fallos": [
+    "P022",
+    "P029"
+  ],
+  "concurrencia": 4,
+  "umbral_latencia_s": 5.0,
+  "marca": "f10_flash_r1",
+  "archivos": [
+    "ejemplos/mensajes_dev.jsonl",
+    "eval/casos_variantes.jsonl",
+    "eval/casos_control.jsonl",
+    "eval/casos_propios.jsonl"
+  ],
+  "modelo": "google/gemini-2.5-flash",
+  "resolucion_post_llm": true
+}

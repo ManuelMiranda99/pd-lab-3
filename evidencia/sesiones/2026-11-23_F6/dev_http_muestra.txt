@@ -1,0 +1,30 @@
+Evaluación · dev_http_muestra · HTTP · http://127.0.0.1:8001/v1/pedidos/interpretar
+Archivos: ejemplos/mensajes_dev.jsonl · casos: 18 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 18/18 = 100.0 %
+
+Exactitud por tipo:
+  agotado                6/6   100.0 %
+  ambiguo                7/7   100.0 %
+  credito                5/5   100.0 %
+
+Por calificador:
+  caso_exacto           18/18  100.0 %
+  estado                18/18  100.0 %
+  lineas                18/18  100.0 %
+  total                 18/18  100.0 %
+  fecha_entrega         18/18  100.0 %
+  motivos_revision      18/18  100.0 %
+  pendientes            18/18  100.0 %
+  sustituciones         18/18  100.0 %
+  lineas_estricto       18/18  100.0 %
+  integridad_precios    18/18  100.0 %
+  mensaje_cliente       18/18  100.0 %
+  latencia              18/18  100.0 %
+
+Latencia por pedido (punta a punta): p50 1.54 s · p95 2.24 s · máx 2.97 s · media 1.70 s
+Tokens entrada/salida (en caché): 0 / 0 (0)
+Costo: no disponible (la API no expone el costo)
+Duración de la corrida: 9.3 s
+
+Fallos (0):

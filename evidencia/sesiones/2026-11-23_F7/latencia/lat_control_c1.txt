@@ -1,0 +1,41 @@
+Evaluación · lat_control_c1 · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: eval/casos_control.jsonl · casos: 14 · concurrencia: 1 · errores: 0
+
+Exactitud global (caso exacto): 14/14 = 100.0 %
+
+Exactitud por tipo:
+  ambiguo                1/1   100.0 %
+  correccion             2/2   100.0 %
+  credito                1/1   100.0 %
+  fuera_de_alcance       1/1   100.0 %
+  habitual               2/2   100.0 %
+  manipulacion           1/1   100.0 %
+  no_existe              1/1   100.0 %
+  simple                 2/2   100.0 %
+  unidades               2/2   100.0 %
+  varios_mensajes        1/1   100.0 %
+
+Por calificador:
+  caso_exacto           14/14  100.0 %
+  estado                14/14  100.0 %
+  lineas                14/14  100.0 %
+  total                 14/14  100.0 %
+  fecha_entrega         14/14  100.0 %
+  motivos_revision      14/14  100.0 %
+  pendientes            14/14  100.0 %
+  sustituciones         14/14  100.0 %
+  lineas_estricto       14/14  100.0 %
+  integridad_precios    14/14  100.0 %
+  mensaje_cliente       14/14  100.0 %
+  latencia              13/14   92.9 %
+
+Latencia por pedido (punta a punta): p50 1.54 s · p95 4.52 s · máx 5.51 s · media 2.07 s
+Latencia de la llamada al LLM: p50 1.54 s · p95 4.52 s · máx 5.50 s
+Tokens entrada/salida (en caché): 77143 / 1645 (75264)
+Costo total: USD 0.003104 · por caso USD 0.000222
+Duración de la corrida: 29.0 s
+
+Fallos (0):
+
+Casos exactos con otros calificadores en 0 (1):
+  W04 [correccion] latencia: 5.51 s > 5.00 s

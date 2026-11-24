@@ -1,0 +1,53 @@
+Evaluación · propios_despues · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: eval/casos_propios.jsonl · casos: 55 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 54/55 = 98.2 %
+
+Exactitud por tipo:
+  agotado                1/2    50.0 %
+  ambiguo                2/2   100.0 %
+  audio                  2/2   100.0 %
+  borde_regla            7/7   100.0 %
+  correccion             2/2   100.0 %
+  credito                3/3   100.0 %
+  fuera_catalogo        10/10  100.0 %
+  fuera_de_alcance       2/2   100.0 %
+  habitual               3/3   100.0 %
+  inyeccion             12/12  100.0 %
+  no_existe              2/2   100.0 %
+  simple                 2/2   100.0 %
+  sin_cantidad           2/2   100.0 %
+  unidades               2/2   100.0 %
+  varios_mensajes        2/2   100.0 %
+
+Por calificador:
+  caso_exacto           54/55   98.2 %
+  estado                55/55  100.0 %
+  lineas                54/55   98.2 %
+  total                 54/55   98.2 %
+  fecha_entrega         55/55  100.0 %
+  motivos_revision      55/55  100.0 %
+  pendientes            55/55  100.0 %
+  sustituciones         54/55   98.2 %
+  lineas_estricto       54/55   98.2 %
+  integridad_precios    55/55  100.0 %
+  mensaje_cliente       55/55  100.0 %
+  latencia              55/55  100.0 %
+
+Latencia por pedido (punta a punta): p50 1.43 s · p95 1.98 s · máx 3.69 s · media 1.53 s
+Latencia de la llamada al LLM: p50 1.43 s · p95 1.95 s · máx 3.69 s
+Tokens entrada/salida (en caché): 317246 / 6714 (295424)
+Costo total: USD 0.013731 · por caso USD 0.000254
+Duración de la corrida: 21.9 s
+
+Fallos (1):
+✗ P036 [agotado] C021 2026-11-28T10:00
+    mensajes: ['Buenas, 1 caja de desodorante fresco y 3 fardos de papel suave 12']
+    - lineas: faltan [('L04', 3)]; sobran [('L04', 1)]
+    - total: 216.0 ≠ 648.0
+    - sustituciones: faltan [('L05', 'L04', 3)]; sobran [('L05', 'L04', 1)]
+    - lineas_estricto: línea 1: cantidad 1 ≠ 3, subtotal 216.0 ≠ 648.0
+    esperado: requiere_revision · líneas [L04×3] · total 648.0 · fecha 2026-12-01 · motivos ['agotado_sin_sustituto'] · pendientes [agotado_sin_sustituto«Desodorante Fresco roll-on 50 ml»['P04']] · sustituciones [L05→L04×3]
+    obtenido: requiere_revision · líneas [L04×1] · total 216.0 · fecha 2026-12-01 · motivos ['agotado_sin_sustituto'] · pendientes [agotado_sin_sustituto«Desodorante Fresco roll-on 50 ml»['P04']] · sustituciones [L05→L04×1]
+      · 'desodorante fresco' → sku P04 · 1 venta · agregar
+      · 'papel suave 12' → sku L05 · 1 venta · agregar

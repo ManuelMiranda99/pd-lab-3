@@ -1,0 +1,29 @@
+Evaluación · final_docker_reintento_429 · HTTP · http://127.0.0.1:8002/v1/pedidos/interpretar
+Archivos: eval/casos_propios.jsonl · casos: 2 · concurrencia: 1 · errores: 0
+
+Exactitud global (caso exacto): 2/2 = 100.0 %
+
+Exactitud por tipo:
+  fuera_catalogo         1/1   100.0 %
+  varios_mensajes        1/1   100.0 %
+
+Por calificador:
+  caso_exacto            2/2   100.0 %
+  estado                 2/2   100.0 %
+  lineas                 2/2   100.0 %
+  total                  2/2   100.0 %
+  fecha_entrega          2/2   100.0 %
+  motivos_revision       2/2   100.0 %
+  pendientes             2/2   100.0 %
+  sustituciones          2/2   100.0 %
+  lineas_estricto        2/2   100.0 %
+  integridad_precios     2/2   100.0 %
+  mensaje_cliente        2/2   100.0 %
+  latencia               2/2   100.0 %
+
+Latencia por pedido (punta a punta): p50 1.08 s · p95 1.35 s · máx 1.38 s · media 1.08 s
+Tokens entrada/salida (en caché): 0 / 0 (0)
+Costo: no disponible (la API no expone el costo)
+Duración de la corrida: 2.2 s
+
+Fallos (0):

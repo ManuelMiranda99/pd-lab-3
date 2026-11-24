@@ -1,0 +1,163 @@
+{
+  "descripcion": "local · modelo openai/gpt-4.1-nano · resolución post-LLM sí",
+  "casos": 14,
+  "etiquetados": 14,
+  "exactos": 14,
+  "exactitud": 1.0,
+  "errores": 0,
+  "por_tipo": {
+    "ambiguo": {
+      "n": 1,
+      "exactos": 1,
+      "exactitud": 1.0
+    },
+    "correccion": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "credito": {
+      "n": 1,
+      "exactos": 1,
+      "exactitud": 1.0
+    },
+    "fuera_de_alcance": {
+      "n": 1,
+      "exactos": 1,
+      "exactitud": 1.0
+    },
+    "habitual": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "manipulacion": {
+      "n": 1,
+      "exactos": 1,
+      "exactitud": 1.0
+    },
+    "no_existe": {
+      "n": 1,
+      "exactos": 1,
+      "exactitud": 1.0
+    },
+    "simple": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "unidades": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "varios_mensajes": {
+      "n": 1,
+      "exactos": 1,
+      "exactitud": 1.0
+    }
+  },
+  "por_origen": {
+    "casos_control.jsonl": {
+      "n": 14,
+      "exactos": 14,
+      "exactitud": 1.0
+    }
+  },
+  "por_calificador": {
+    "caso_exacto": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "estado": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "lineas": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "total": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "fecha_entrega": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "motivos_revision": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "pendientes": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "sustituciones": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "lineas_estricto": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "integridad_precios": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "mensaje_cliente": {
+      "n": 14,
+      "aprobados": 14,
+      "tasa": 1.0
+    },
+    "latencia": {
+      "n": 14,
+      "aprobados": 13,
+      "tasa": 0.9286
+    }
+  },
+  "latencia_s": {
+    "n": 14,
+    "p50": 1.984,
+    "p95": 4.986,
+    "max": 5.835,
+    "media": 2.361
+  },
+  "latencia_llm_s": {
+    "n": 14,
+    "p50": 1.939,
+    "p95": 4.985,
+    "max": 5.834,
+    "media": 2.336
+  },
+  "tokens": {
+    "entrada": 77143,
+    "salida": 1643,
+    "cache": 73472
+  },
+  "costo_usd": {
+    "total": 0.003228,
+    "por_caso": 0.000231,
+    "casos_con_costo": 14
+  },
+  "duracion_s": 9.5,
+  "fallos": [],
+  "concurrencia": 4,
+  "umbral_latencia_s": 5.0,
+  "marca": "control_despues",
+  "archivos": [
+    "eval/casos_control.jsonl"
+  ],
+  "modelo": "openai/gpt-4.1-nano",
+  "resolucion_post_llm": true
+}

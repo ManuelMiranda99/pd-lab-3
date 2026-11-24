@@ -1,0 +1,49 @@
+Evaluación · 20261123-084809_http · HTTP · http://127.0.0.1:8003/v1/pedidos/interpretar
+Archivos: ejemplos/mensajes_dev.jsonl, eval/casos_variantes.jsonl, eval/casos_control.jsonl, eval/casos_propios.jsonl · casos: 177 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 177/177 = 100.0 %
+
+Exactitud por tipo:
+  agotado               10/10  100.0 %
+  ambiguo               15/15  100.0 %
+  audio                  6/6   100.0 %
+  borde_regla            7/7   100.0 %
+  correccion            13/13  100.0 %
+  credito                9/9   100.0 %
+  fuera_catalogo        10/10  100.0 %
+  fuera_de_alcance      10/10  100.0 %
+  habitual              16/16  100.0 %
+  inyeccion             12/12  100.0 %
+  manipulacion           2/2   100.0 %
+  no_existe              8/8   100.0 %
+  simple                25/25  100.0 %
+  sin_cantidad           7/7   100.0 %
+  unidades              16/16  100.0 %
+  varios_mensajes       11/11  100.0 %
+
+Exactitud por archivo:
+  casos_control.jsonl           14/14  100.0 %
+  casos_propios.jsonl           55/55  100.0 %
+  casos_variantes.jsonl         24/24  100.0 %
+  mensajes_dev.jsonl            84/84  100.0 %
+
+Por calificador:
+  caso_exacto          177/177 100.0 %
+  estado               177/177 100.0 %
+  lineas               177/177 100.0 %
+  total                177/177 100.0 %
+  fecha_entrega        177/177 100.0 %
+  motivos_revision     177/177 100.0 %
+  pendientes           177/177 100.0 %
+  sustituciones        177/177 100.0 %
+  lineas_estricto      177/177 100.0 %
+  integridad_precios   177/177 100.0 %
+  mensaje_cliente      177/177 100.0 %
+  latencia             177/177 100.0 %
+
+Latencia por pedido (punta a punta): p50 0.82 s · p95 1.10 s · máx 1.65 s · media 0.83 s
+Tokens entrada/salida (en caché): 0 / 0 (0)
+Costo: no disponible (la API no expone el costo)
+Duración de la corrida: 37.0 s
+
+Fallos (0):

@@ -1,0 +1,49 @@
+Evaluación · variantes_despues · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: eval/casos_variantes.jsonl · casos: 24 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 23/24 = 95.8 %
+
+Exactitud por tipo:
+  agotado                1/2    50.0 %
+  ambiguo                5/5   100.0 %
+  audio                  1/1   100.0 %
+  correccion             2/2   100.0 %
+  fuera_de_alcance       2/2   100.0 %
+  habitual               3/3   100.0 %
+  manipulacion           1/1   100.0 %
+  no_existe              1/1   100.0 %
+  simple                 2/2   100.0 %
+  sin_cantidad           1/1   100.0 %
+  unidades               3/3   100.0 %
+  varios_mensajes        1/1   100.0 %
+
+Por calificador:
+  caso_exacto           23/24   95.8 %
+  estado                24/24  100.0 %
+  lineas                24/24  100.0 %
+  total                 24/24  100.0 %
+  fecha_entrega         24/24  100.0 %
+  motivos_revision      23/24   95.8 %
+  pendientes            23/24   95.8 %
+  sustituciones         24/24  100.0 %
+  lineas_estricto       24/24  100.0 %
+  integridad_precios    24/24  100.0 %
+  mensaje_cliente       24/24  100.0 %
+  latencia              24/24  100.0 %
+
+Latencia por pedido (punta a punta): p50 1.59 s · p95 2.10 s · máx 2.20 s · media 1.61 s
+Latencia de la llamada al LLM: p50 1.59 s · p95 2.02 s · máx 2.20 s
+Tokens entrada/salida (en caché): 132317 / 3135 (128768)
+Costo total: USD 0.005472 · por caso USD 0.000228
+Duración de la corrida: 9.9 s
+
+Fallos (1):
+✗ V10 [agotado] C039 2026-12-09T13:59
+    mensajes: ['Buenas, necesito 3 fardos de harina de maíz, una libra de queso y 2 de café instantáneo']
+    - motivos_revision: ['agotado_sin_sustituto', 'producto_ambiguo'] ≠ ['agotado_sin_sustituto', 'producto_no_existe']
+    - pendientes: faltan [('producto_no_existe', ())]; sobran [('producto_ambiguo', ('A09', 'A10', 'P03'))]
+    esperado: requiere_revision · líneas [A08×3] · total 540.0 · fecha 2026-12-12 · motivos ['producto_no_existe', 'agotado_sin_sustituto'] · pendientes [producto_no_existe«queso», agotado_sin_sustituto«Café Altura Instantáneo 50 g»['A13']]
+    obtenido: requiere_revision · líneas [A08×3] · total 540.0 · fecha 2026-12-12 · motivos ['producto_ambiguo', 'agotado_sin_sustituto'] · pendientes [producto_ambiguo«pasta»['A09', 'A10', 'P03'], agotado_sin_sustituto«Café Altura Instantáneo 50 g»['A13']]
+      · 'harina' → sku A08 · 3 venta · agregar
+      · 'pasta' → ambiguo ['A09', 'A10', 'P03'] · 1 venta · agregar
+      · 'cafe' → sku A13 · 2 venta · agregar

@@ -1,0 +1,258 @@
+{
+  "descripcion": "local · modelo openai/gpt-4.1-nano · resolución post-LLM no · razonamiento proveedor",
+  "casos": 177,
+  "etiquetados": 177,
+  "exactos": 131,
+  "exactitud": 0.7401,
+  "errores": 0,
+  "por_tipo": {
+    "agotado": {
+      "n": 10,
+      "exactos": 6,
+      "exactitud": 0.6
+    },
+    "ambiguo": {
+      "n": 15,
+      "exactos": 2,
+      "exactitud": 0.1333
+    },
+    "audio": {
+      "n": 6,
+      "exactos": 4,
+      "exactitud": 0.6667
+    },
+    "borde_regla": {
+      "n": 7,
+      "exactos": 6,
+      "exactitud": 0.8571
+    },
+    "correccion": {
+      "n": 13,
+      "exactos": 12,
+      "exactitud": 0.9231
+    },
+    "credito": {
+      "n": 9,
+      "exactos": 7,
+      "exactitud": 0.7778
+    },
+    "fuera_catalogo": {
+      "n": 10,
+      "exactos": 6,
+      "exactitud": 0.6
+    },
+    "fuera_de_alcance": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "habitual": {
+      "n": 16,
+      "exactos": 15,
+      "exactitud": 0.9375
+    },
+    "inyeccion": {
+      "n": 12,
+      "exactos": 9,
+      "exactitud": 0.75
+    },
+    "manipulacion": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "no_existe": {
+      "n": 8,
+      "exactos": 6,
+      "exactitud": 0.75
+    },
+    "simple": {
+      "n": 25,
+      "exactos": 20,
+      "exactitud": 0.8
+    },
+    "sin_cantidad": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "unidades": {
+      "n": 16,
+      "exactos": 13,
+      "exactitud": 0.8125
+    },
+    "varios_mensajes": {
+      "n": 11,
+      "exactos": 6,
+      "exactitud": 0.5455
+    }
+  },
+  "por_origen": {
+    "casos_control.jsonl": {
+      "n": 14,
+      "exactos": 13,
+      "exactitud": 0.9286
+    },
+    "casos_propios.jsonl": {
+      "n": 55,
+      "exactos": 40,
+      "exactitud": 0.7273
+    },
+    "casos_variantes.jsonl": {
+      "n": 24,
+      "exactos": 15,
+      "exactitud": 0.625
+    },
+    "mensajes_dev.jsonl": {
+      "n": 84,
+      "exactos": 63,
+      "exactitud": 0.75
+    }
+  },
+  "por_calificador": {
+    "caso_exacto": {
+      "n": 177,
+      "aprobados": 131,
+      "tasa": 0.7401
+    },
+    "estado": {
+      "n": 177,
+      "aprobados": 156,
+      "tasa": 0.8814
+    },
+    "lineas": {
+      "n": 177,
+      "aprobados": 134,
+      "tasa": 0.7571
+    },
+    "total": {
+      "n": 177,
+      "aprobados": 134,
+      "tasa": 0.7571
+    },
+    "fecha_entrega": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "motivos_revision": {
+      "n": 177,
+      "aprobados": 144,
+      "tasa": 0.8136
+    },
+    "pendientes": {
+      "n": 177,
+      "aprobados": 149,
+      "tasa": 0.8418
+    },
+    "sustituciones": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "lineas_estricto": {
+      "n": 177,
+      "aprobados": 134,
+      "tasa": 0.7571
+    },
+    "integridad_precios": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "mensaje_cliente": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "latencia": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    }
+  },
+  "latencia_s": {
+    "n": 177,
+    "p50": 1.594,
+    "p95": 3.247,
+    "max": 4.55,
+    "media": 1.755
+  },
+  "latencia_llm_s": {
+    "n": 177,
+    "p50": 1.593,
+    "p95": 3.246,
+    "max": 4.549,
+    "media": 1.752
+  },
+  "tokens": {
+    "entrada": 1034276,
+    "salida": 23201,
+    "cache": 1001216
+  },
+  "costo_usd": {
+    "total": 0.042623,
+    "por_caso": 0.000242,
+    "casos_con_costo": 176
+  },
+  "duracion_s": 78.3,
+  "fallos": [
+    "D003",
+    "D005",
+    "D009",
+    "D010",
+    "D016",
+    "D024",
+    "D028",
+    "D034",
+    "D035",
+    "D037",
+    "D039",
+    "D041",
+    "D043",
+    "D052",
+    "D053",
+    "D063",
+    "D064",
+    "D073",
+    "D074",
+    "D077",
+    "D082",
+    "V09",
+    "V11",
+    "V12",
+    "V13",
+    "V14",
+    "V15",
+    "V17",
+    "V23",
+    "V24",
+    "W08",
+    "P002",
+    "P003",
+    "P010",
+    "P019",
+    "P020",
+    "P028",
+    "P033",
+    "P034",
+    "P035",
+    "P040",
+    "P041",
+    "P047",
+    "P053",
+    "P054",
+    "P055"
+  ],
+  "concurrencia": 4,
+  "umbral_latencia_s": 5.0,
+  "marca": "f10_nano_sinres_r1",
+  "archivos": [
+    "ejemplos/mensajes_dev.jsonl",
+    "eval/casos_variantes.jsonl",
+    "eval/casos_control.jsonl",
+    "eval/casos_propios.jsonl"
+  ],
+  "modelo": "openai/gpt-4.1-nano",
+  "resolucion_post_llm": false
+}

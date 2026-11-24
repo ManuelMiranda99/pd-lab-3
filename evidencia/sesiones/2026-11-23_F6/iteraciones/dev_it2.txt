@@ -1,0 +1,53 @@
+Evaluación · dev_it2 · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: ejemplos/mensajes_dev.jsonl · casos: 84 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 83/84 = 98.8 %
+
+Exactitud por tipo:
+  agotado                6/6   100.0 %
+  ambiguo                6/7    85.7 %
+  audio                  3/3   100.0 %
+  correccion             7/7   100.0 %
+  credito                5/5   100.0 %
+  fuera_de_alcance       5/5   100.0 %
+  habitual               8/8   100.0 %
+  no_existe              4/4   100.0 %
+  simple                19/19  100.0 %
+  sin_cantidad           4/4   100.0 %
+  unidades               9/9   100.0 %
+  varios_mensajes        7/7   100.0 %
+
+Por calificador:
+  caso_exacto           83/84   98.8 %
+  estado                83/84   98.8 %
+  lineas                83/84   98.8 %
+  total                 83/84   98.8 %
+  fecha_entrega         84/84  100.0 %
+  motivos_revision      83/84   98.8 %
+  pendientes            83/84   98.8 %
+  sustituciones         84/84  100.0 %
+  lineas_estricto       83/84   98.8 %
+  integridad_precios    84/84  100.0 %
+  mensaje_cliente       84/84  100.0 %
+  latencia              84/84  100.0 %
+
+Latencia por pedido (punta a punta): p50 1.48 s · p95 2.14 s · máx 2.66 s · media 1.54 s
+Latencia de la llamada al LLM: p50 1.48 s · p95 2.14 s · máx 2.65 s
+Tokens entrada/salida (en caché): 463650 / 11711 (449280)
+Costo total: USD 0.019600 · por caso USD 0.000233
+Duración de la corrida: 32.8 s
+
+Fallos (1):
+✗ D008 [ambiguo] C016 2026-12-06T08:39
+    mensajes: ['Necesito pasta: 2, seis fardos de espagueti bella y 12 cajas de pasta dental sonrisa 75 ml. porfa']
+    - estado: confirmado ≠ requiere_revision
+    - lineas: faltan [('P03', 12)]; sobran [('P03', 14)]
+    - total: 2520.0 ≠ 2240.64
+    - motivos_revision: [] ≠ ['producto_ambiguo']
+    - pendientes: faltan [('producto_ambiguo', ('A09', 'A10', 'P03'))]
+    - lineas_estricto: línea 1: sku P03 ≠ A10, cantidad 14 ≠ 6, descuento_pct 3 ≠ 2, precio_unitario 144.0 ≠ 96.0, subtotal 1955.52 ≠ 564.48
+    esperado: requiere_revision · líneas [A10×6, P03×12] · total 2240.64 · fecha 2026-12-07 · motivos ['producto_ambiguo'] · pendientes [producto_ambiguo«pasta»['A09', 'A10', 'P03']]
+    obtenido: confirmado · líneas [P03×14, A10×6] · total 2520.0 · fecha 2026-12-07 · motivos [] · pendientes [∅]
+      · 'pasta' → sku P03 · 2 venta · agregar
+      · 'espagueti bella' → sku A10 · 6 venta · agregar
+      · 'pasta dental sonrisa 75 ml' → sku P03 · 12 venta · agregar

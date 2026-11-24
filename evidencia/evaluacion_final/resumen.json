@@ -1,0 +1,214 @@
+{
+  "descripcion": "HTTP · http://127.0.0.1:8002/v1/pedidos/interpretar",
+  "casos": 177,
+  "etiquetados": 177,
+  "exactos": 175,
+  "exactitud": 0.9887,
+  "errores": 2,
+  "por_tipo": {
+    "agotado": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "ambiguo": {
+      "n": 15,
+      "exactos": 15,
+      "exactitud": 1.0
+    },
+    "audio": {
+      "n": 6,
+      "exactos": 6,
+      "exactitud": 1.0
+    },
+    "borde_regla": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "correccion": {
+      "n": 13,
+      "exactos": 13,
+      "exactitud": 1.0
+    },
+    "credito": {
+      "n": 9,
+      "exactos": 9,
+      "exactitud": 1.0
+    },
+    "fuera_catalogo": {
+      "n": 10,
+      "exactos": 9,
+      "exactitud": 0.9
+    },
+    "fuera_de_alcance": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "habitual": {
+      "n": 16,
+      "exactos": 16,
+      "exactitud": 1.0
+    },
+    "inyeccion": {
+      "n": 12,
+      "exactos": 12,
+      "exactitud": 1.0
+    },
+    "manipulacion": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "no_existe": {
+      "n": 8,
+      "exactos": 8,
+      "exactitud": 1.0
+    },
+    "simple": {
+      "n": 25,
+      "exactos": 25,
+      "exactitud": 1.0
+    },
+    "sin_cantidad": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "unidades": {
+      "n": 16,
+      "exactos": 16,
+      "exactitud": 1.0
+    },
+    "varios_mensajes": {
+      "n": 11,
+      "exactos": 10,
+      "exactitud": 0.9091
+    }
+  },
+  "por_origen": {
+    "casos_control.jsonl": {
+      "n": 14,
+      "exactos": 14,
+      "exactitud": 1.0
+    },
+    "casos_propios.jsonl": {
+      "n": 55,
+      "exactos": 53,
+      "exactitud": 0.9636
+    },
+    "casos_variantes.jsonl": {
+      "n": 24,
+      "exactos": 24,
+      "exactitud": 1.0
+    },
+    "mensajes_dev.jsonl": {
+      "n": 84,
+      "exactos": 84,
+      "exactitud": 1.0
+    }
+  },
+  "por_calificador": {
+    "caso_exacto": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "estado": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "lineas": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "total": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "fecha_entrega": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "motivos_revision": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "pendientes": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "sustituciones": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "lineas_estricto": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "integridad_precios": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "mensaje_cliente": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "latencia": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    }
+  },
+  "latencia_s": {
+    "n": 177,
+    "p50": 0.83,
+    "p95": 1.081,
+    "max": 1.356,
+    "media": 0.829
+  },
+  "latencia_llm_s": {
+    "n": 0,
+    "p50": 0.0,
+    "p95": 0.0,
+    "max": 0.0,
+    "media": 0.0
+  },
+  "tokens": {
+    "entrada": 0,
+    "salida": 0,
+    "cache": 0
+  },
+  "costo_usd": {
+    "total": 0,
+    "por_caso": null,
+    "casos_con_costo": 0
+  },
+  "duracion_s": 37.3,
+  "fallos": [
+    "P042",
+    "P051"
+  ],
+  "concurrencia": 4,
+  "umbral_latencia_s": 5.0,
+  "marca": "final_docker_flashlite",
+  "archivos": [
+    "ejemplos/mensajes_dev.jsonl",
+    "eval/casos_variantes.jsonl",
+    "eval/casos_control.jsonl",
+    "eval/casos_propios.jsonl"
+  ],
+  "modelo": null,
+  "resolucion_post_llm": null
+}

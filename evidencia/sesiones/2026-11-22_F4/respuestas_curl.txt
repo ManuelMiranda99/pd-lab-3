@@ -1,0 +1,67 @@
+# Respuestas reales de la API (uvicorn novapedidos.api.main:app --port 8000, INTERPRETE=falso)
+# Fecha de la sesión: 2026-11-22. Servidor en 127.0.0.1:8000.
+
+$ curl -s -X POST http://127.0.0.1:8000/v1/pedidos/interpretar -H "Content-Type: application/json" -d <ejemplo del Anexo>
+{
+  "cliente_id": "C001",
+  "estado": "requiere_revision",
+  "lineas": [
+    {
+      "sku": "B01",
+      "cantidad": 2,
+      "precio_unitario": 120.0,
+      "descuento_pct": 0,
+      "subtotal": 240.0
+    },
+    {
+      "sku": "B11",
+      "cantidad": 4,
+      "precio_unitario": 150.0,
+      "descuento_pct": 0,
+      "subtotal": 600.0
+    }
+  ],
+  "total": 840.0,
+  "fecha_entrega": "2026-11-26",
+  "sustituciones": [],
+  "pendientes": [
+    {
+      "motivo": "producto_ambiguo",
+      "texto": "aceite",
+      "opciones": [
+        "A06",
+        "A07"
+      ]
+    }
+  ],
+  "motivos_revision": [
+    "producto_ambiguo"
+  ],
+  "mensaje_cliente": "¡Buenas tardes! Recibimos su pedido: 2 fardos de Kola Norte 600 ml y 4 fardos de Energía Max 473 ml. Sobre «aceite», necesitamos confirmar cuál producto desea. Total: Q840.00. Entrega prevista el jueves 26 de noviembre. Un asesor le confirmará su pedido en breve. ¡Gracias!"
+}
+HTTP 200 (0.030424s)
+
+
+$ curl -s -X POST http://127.0.0.1:8000/v1/pedidos/interpretar -H 'Content-Type: application/json' -d '{"cliente_id": "C001", "fecha_hora": "2026-11-23 15:20", "mensajes": []}'
+{"error":"solicitud_invalida","mensaje":"fecha_hora debe tener el formato AAAA-MM-DDTHH:MM (p. ej. 2026-11-28T14:53): '2026-11-23 15:20'. El campo 'mensajes' no puede estar vacío: envíe al menos un mensaje.","detalles":[{"campo":"fecha_hora","mensaje":"fecha_hora debe tener el formato AAAA-MM-DDTHH:MM (p. ej. 2026-11-28T14:53): '2026-11-23 15:20'","tipo":"value_error"},{"campo":"mensajes","mensaje":"El campo 'mensajes' no puede estar vacío: envíe al menos un mensaje.","tipo":"too_short"}]}
+HTTP 422
+
+$ curl -s -X POST http://127.0.0.1:8000/v1/pedidos/interpretar -H 'Content-Type: application/json' -d '{"fecha_hora": "2026-11-23T15:20", "mensajes": ["hola"]}'
+{"error":"solicitud_invalida","mensaje":"Falta el campo obligatorio 'cliente_id'.","detalles":[{"campo":"cliente_id","mensaje":"Falta el campo obligatorio 'cliente_id'.","tipo":"missing"}]}
+HTTP 422
+
+$ curl -s -X POST http://127.0.0.1:8000/v1/pedidos/interpretar -H 'Content-Type: application/json' -d '{"cliente_id": "C999", "fecha_hora": "2026-11-23T15:20", "mensajes": ["hola"]}'
+{"error":"cliente_no_encontrado","mensaje":"No existe un cliente con cliente_id 'C999'.","detalles":[]}
+HTTP 404
+
+$ curl -s -X POST http://127.0.0.1:8000/v1/pedidos/interpretar -H 'Content-Type: application/json' -d '{"cliente_id": "C001", "fecha_hora": "2026-11-23T09:00", "mensajes": ["¿A qué hora pasa el camión el jueves?"]}'
+{"cliente_id":"C001","estado":"fuera_de_alcance","lineas":[],"total":0.0,"fecha_entrega":null,"sustituciones":[],"pendientes":[],"motivos_revision":[],"mensaje_cliente":"¡Buenos días! Gracias por escribirnos. Un asesor atenderá su consulta en breve."}
+HTTP 200
+
+$ curl -s -X POST http://127.0.0.1:8000/v1/pedidos/interpretar -H 'Content-Type: application/json' -d 'esto no es json'
+{"error":"solicitud_invalida","mensaje":"El cuerpo de la solicitud no es JSON válido.","detalles":[{"campo":"cuerpo","mensaje":"El cuerpo de la solicitud no es JSON válido.","tipo":"json_invalid"}]}
+HTTP 422
+
+$ curl -s http://127.0.0.1:8000/health   # MLflow (http://localhost:5000) apagado
+{"estado":"degradado","motivo":"MLflow no responde ([Errno 61] Connection refused)","dependencias":{"mlflow":"MLflow no responde ([Errno 61] Connection refused)","datos":"ok","interprete":"falso"}}
+HTTP 200 (0.003641s)

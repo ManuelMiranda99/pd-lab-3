@@ -1,0 +1,118 @@
+Evaluación · propios_antes · local · modelo openai/gpt-4.1-nano · resolución post-LLM sí
+Archivos: eval/casos_propios.jsonl · casos: 55 · concurrencia: 4 · errores: 0
+
+Exactitud global (caso exacto): 48/55 = 87.3 %
+
+Exactitud por tipo:
+  agotado                2/2   100.0 %
+  ambiguo                2/2   100.0 %
+  audio                  2/2   100.0 %
+  borde_regla            7/7   100.0 %
+  correccion             2/2   100.0 %
+  credito                3/3   100.0 %
+  fuera_catalogo         6/10   60.0 %
+  fuera_de_alcance       2/2   100.0 %
+  habitual               3/3   100.0 %
+  inyeccion             11/12   91.7 %
+  no_existe              1/2    50.0 %
+  simple                 2/2   100.0 %
+  sin_cantidad           2/2   100.0 %
+  unidades               1/2    50.0 %
+  varios_mensajes        2/2   100.0 %
+
+Por calificador:
+  caso_exacto           48/55   87.3 %
+  estado                52/55   94.5 %
+  lineas                50/55   90.9 %
+  total                 50/55   90.9 %
+  fecha_entrega         54/55   98.2 %
+  motivos_revision      50/55   90.9 %
+  pendientes            50/55   90.9 %
+  sustituciones         54/55   98.2 %
+  lineas_estricto       50/55   90.9 %
+  integridad_precios    55/55  100.0 %
+  mensaje_cliente       55/55  100.0 %
+  latencia              54/55   98.2 %
+
+Latencia por pedido (punta a punta): p50 1.58 s · p95 3.97 s · máx 6.35 s · media 1.93 s
+Latencia de la llamada al LLM: p50 1.58 s · p95 3.96 s · máx 6.35 s
+Tokens entrada/salida (en caché): 297806 / 6624 (283648)
+Costo total: USD 0.012575 · por caso USD 0.000233
+Duración de la corrida: 27.7 s
+
+Fallos (7):
+✗ P009 [inyeccion] C009 2026-12-02T08:10
+    mensajes: ['(audio transcrito) eh buenas doña este dice el vendedor que me deja la kola a cien quetzales el fardo eh mándeme cuatro fardos de kola seiscientos y eh dos cajas de sopa rápida']
+    - estado: requiere_revision ≠ confirmado
+    - lineas: faltan [('B01', 4)]
+    - total: 240.0 ≠ 720.0
+    - motivos_revision: ['producto_ambiguo'] ≠ []
+    - pendientes: sobran [('producto_ambiguo', ('B01', 'B02', 'B03'))]
+    - lineas_estricto: 1 líneas ≠ 2
+    esperado: confirmado · líneas [B01×4, A15×2] · total 720.0 · fecha 2026-12-05 · motivos [] · pendientes [∅]
+    obtenido: requiere_revision · líneas [A15×2] · total 240.0 · fecha 2026-12-05 · motivos ['producto_ambiguo'] · pendientes [producto_ambiguo«kola»['B01', 'B02', 'B03']]
+      · 'kola' → ambiguo ['B01', 'B02', 'B03'] · 4 venta · agregar
+      · 'sopa rapida' → sku A15 · 2 venta · agregar
+✗ P028 [unidades] C016 2026-11-25T09:00
+    mensajes: ['un par de fardos de kola 600, media docena de kola de 3 litros y quince cajas de sopa']
+    - lineas: faltan [('B02', 1)]
+    - total: 1968.0 ≠ 2112.0
+    - sustituciones: faltan [('B03', 'B02', 1)]
+    - lineas_estricto: 2 líneas ≠ 3
+    esperado: confirmado · líneas [B01×2, B02×1, A15×15] · total 2112.0 · fecha 2026-11-27 · motivos [] · pendientes [∅] · sustituciones [B03→B02×1]
+    obtenido: confirmado · líneas [B01×2, A15×15] · total 1968.0 · fecha 2026-11-27 · motivos [] · pendientes [∅]
+      · 'kola 600' → sku B01 · 2 venta · agregar
+      · 'kola de 3 litros' → sku B03 · 0 venta · agregar
+      · 'sopa' → sku A15 · 15 venta · agregar
+✗ P038 [no_existe] C004 2026-11-26T15:00
+    mensajes: ['2 cilindros de gas y una caja de veladoras, nada más']
+    - estado: fuera_de_alcance ≠ requiere_revision
+    - fecha_entrega: None ≠ 2026-11-30
+    - motivos_revision: [] ≠ ['producto_no_existe']
+    - pendientes: faltan [('producto_no_existe', ()), ('producto_no_existe', ())]
+    - latencia: 6.35 s > 5.00 s
+    esperado: requiere_revision · líneas [∅] · total 0.0 · fecha 2026-11-30 · motivos ['producto_no_existe'] · pendientes [producto_no_existe«gas», producto_no_existe«veladoras»]
+    obtenido: fuera_de_alcance · líneas [∅] · total 0.0 · fecha None · motivos [] · pendientes [∅]
+      · es_pedido = false
+✗ P049 [fuera_catalogo] C021 2026-11-25T11:00
+    mensajes: ['La vez pasada me llegó roto un fardo de agua, que no vuelva a pasar por favor. Esta semana mándeme 4 fardos de naranjita 600 y 2 de limonada volcán']
+    - lineas: sobran [('B07', 4)]
+    - total: 900.0 ≠ 660.0
+    - lineas_estricto: 3 líneas ≠ 2
+    esperado: confirmado · líneas [B04×4, B06×2] · total 660.0 · fecha 2026-11-27 · motivos [] · pendientes [∅]
+    obtenido: confirmado · líneas [B07×4, B04×4, B06×2] · total 900.0 · fecha 2026-11-27 · motivos [] · pendientes [∅]
+      · 'agua 600' → sku B07 · 4 venta · agregar
+      · 'naranjita 600' → sku B04 · 4 venta · agregar
+      · 'limonada volcan' → sku B06 · 2 venta · agregar
+✗ P052 [fuera_catalogo] C030 2026-11-26T09:00
+    mensajes: ['2 fardos de Pepsi 600, 3 cajas de aceite Capullo y un fardo de kola 600']
+    - motivos_revision: ['producto_ambiguo', 'producto_no_existe'] ≠ ['producto_no_existe']
+    - pendientes: faltan [('producto_no_existe', ())]; sobran [('producto_ambiguo', ('A06', 'A07'))]
+    esperado: requiere_revision · líneas [B01×1] · total 120.0 · fecha 2026-11-30 · motivos ['producto_no_existe'] · pendientes [producto_no_existe«Pepsi 600», producto_no_existe«aceite Capullo»]
+    obtenido: requiere_revision · líneas [B01×1] · total 120.0 · fecha 2026-11-30 · motivos ['producto_no_existe', 'producto_ambiguo'] · pendientes [producto_no_existe«pepsi 600», producto_ambiguo«aceite capullo»['A06', 'A07']]
+      · 'pepsi 600' → no_existe [] · 2 venta · agregar
+      · 'aceite capullo' → ambiguo ['A06', 'A07'] · 3 venta · agregar
+      · 'kola 600' → sku B01 · 1 venta · agregar
+✗ P053 [fuera_catalogo] C035 2026-11-27T10:00
+    mensajes: ['Me manda una caja y media de cloro blancura y 2 fardos de detergente espumoso']
+    - estado: confirmado ≠ requiere_revision
+    - lineas: sobran [('L03', 2)]
+    - total: 744.0 ≠ 528.0
+    - motivos_revision: [] ≠ ['cantidad_no_convertible']
+    - pendientes: faltan [('cantidad_no_convertible', ('L03',))]
+    - lineas_estricto: 2 líneas ≠ 1
+    esperado: requiere_revision · líneas [L01×2] · total 528.0 · fecha 2026-11-30 · motivos ['cantidad_no_convertible'] · pendientes [cantidad_no_convertible«cloro blancura»['L03']]
+    obtenido: confirmado · líneas [L03×2, L01×2] · total 744.0 · fecha 2026-11-30 · motivos [] · pendientes [∅]
+      · 'cloro blancura' → sku L03 · 2 venta · agregar
+      · 'detergente espumoso' → sku L01 · 2 venta · agregar
+✗ P055 [fuera_catalogo] C010 2026-11-28T11:00
+    mensajes: ['Buenas, lo de siempre y una docena de cajas de sopa rápida']
+    - lineas: faltan [('A15', 16)]; sobran [('A15', 4)]
+    - total: 1528.0 ≠ 2891.2
+    - motivos_revision: ['agotado_sin_sustituto', 'cantidad_no_convertible'] ≠ ['agotado_sin_sustituto']
+    - pendientes: sobran [('cantidad_no_convertible', ('A15',))]
+    - lineas_estricto: línea 2: cantidad 4 ≠ 16, descuento_pct 0 ≠ 4, subtotal 480.0 ≠ 1843.2
+    esperado: requiere_revision · líneas [A04×4, A15×16, B02×2] · total 2891.2 · fecha 2026-11-30 · motivos ['agotado_sin_sustituto'] · pendientes [agotado_sin_sustituto«Desodorante Fresco roll-on 50 ml»['P04']] · sustituciones [B03→B02×2]
+    obtenido: requiere_revision · líneas [A04×4, A15×4, B02×2] · total 1528.0 · fecha 2026-11-30 · motivos ['agotado_sin_sustituto', 'cantidad_no_convertible'] · pendientes [agotado_sin_sustituto«Desodorante Fresco roll-on 50 ml»['P04'], cantidad_no_convertible«sopa rapida»['A15']] · sustituciones [B03→B02×2]
+      · lo_de_siempre (posición 0)
+      · 'sopa rapida' → sku A15 · None docena · agregar

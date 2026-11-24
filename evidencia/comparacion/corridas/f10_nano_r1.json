@@ -1,0 +1,214 @@
+{
+  "descripcion": "local · modelo openai/gpt-4.1-nano · resolución post-LLM sí · razonamiento proveedor",
+  "casos": 177,
+  "etiquetados": 177,
+  "exactos": 175,
+  "exactitud": 0.9887,
+  "errores": 0,
+  "por_tipo": {
+    "agotado": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "ambiguo": {
+      "n": 15,
+      "exactos": 15,
+      "exactitud": 1.0
+    },
+    "audio": {
+      "n": 6,
+      "exactos": 6,
+      "exactitud": 1.0
+    },
+    "borde_regla": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "correccion": {
+      "n": 13,
+      "exactos": 13,
+      "exactitud": 1.0
+    },
+    "credito": {
+      "n": 9,
+      "exactos": 9,
+      "exactitud": 1.0
+    },
+    "fuera_catalogo": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "fuera_de_alcance": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "habitual": {
+      "n": 16,
+      "exactos": 16,
+      "exactitud": 1.0
+    },
+    "inyeccion": {
+      "n": 12,
+      "exactos": 12,
+      "exactitud": 1.0
+    },
+    "manipulacion": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "no_existe": {
+      "n": 8,
+      "exactos": 8,
+      "exactitud": 1.0
+    },
+    "simple": {
+      "n": 25,
+      "exactos": 25,
+      "exactitud": 1.0
+    },
+    "sin_cantidad": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "unidades": {
+      "n": 16,
+      "exactos": 15,
+      "exactitud": 0.9375
+    },
+    "varios_mensajes": {
+      "n": 11,
+      "exactos": 10,
+      "exactitud": 0.9091
+    }
+  },
+  "por_origen": {
+    "casos_control.jsonl": {
+      "n": 14,
+      "exactos": 14,
+      "exactitud": 1.0
+    },
+    "casos_propios.jsonl": {
+      "n": 55,
+      "exactos": 54,
+      "exactitud": 0.9818
+    },
+    "casos_variantes.jsonl": {
+      "n": 24,
+      "exactos": 24,
+      "exactitud": 1.0
+    },
+    "mensajes_dev.jsonl": {
+      "n": 84,
+      "exactos": 83,
+      "exactitud": 0.9881
+    }
+  },
+  "por_calificador": {
+    "caso_exacto": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "estado": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "lineas": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "total": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "fecha_entrega": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "motivos_revision": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "pendientes": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "sustituciones": {
+      "n": 177,
+      "aprobados": 176,
+      "tasa": 0.9944
+    },
+    "lineas_estricto": {
+      "n": 177,
+      "aprobados": 175,
+      "tasa": 0.9887
+    },
+    "integridad_precios": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "mensaje_cliente": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "latencia": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    }
+  },
+  "latencia_s": {
+    "n": 177,
+    "p50": 1.629,
+    "p95": 2.46,
+    "max": 4.224,
+    "media": 1.698
+  },
+  "latencia_llm_s": {
+    "n": 177,
+    "p50": 1.624,
+    "p95": 2.458,
+    "max": 4.222,
+    "media": 1.695
+  },
+  "tokens": {
+    "entrada": 1034276,
+    "salida": 23318,
+    "cache": 1004288
+  },
+  "costo_usd": {
+    "total": 0.042455,
+    "por_caso": 0.000241,
+    "casos_con_costo": 176
+  },
+  "duracion_s": 75.7,
+  "fallos": [
+    "D073",
+    "P028"
+  ],
+  "concurrencia": 4,
+  "umbral_latencia_s": 5.0,
+  "marca": "f10_nano_r1",
+  "archivos": [
+    "ejemplos/mensajes_dev.jsonl",
+    "eval/casos_variantes.jsonl",
+    "eval/casos_control.jsonl",
+    "eval/casos_propios.jsonl"
+  ],
+  "modelo": "openai/gpt-4.1-nano",
+  "resolucion_post_llm": true
+}

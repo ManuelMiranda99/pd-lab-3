@@ -1,0 +1,213 @@
+{
+  "descripcion": "local · modelo mistralai/mistral-small-3.2-24b-instruct · resolución post-LLM sí · razonamiento proveedor",
+  "casos": 177,
+  "etiquetados": 177,
+  "exactos": 176,
+  "exactitud": 0.9944,
+  "errores": 0,
+  "por_tipo": {
+    "agotado": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "ambiguo": {
+      "n": 15,
+      "exactos": 15,
+      "exactitud": 1.0
+    },
+    "audio": {
+      "n": 6,
+      "exactos": 6,
+      "exactitud": 1.0
+    },
+    "borde_regla": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "correccion": {
+      "n": 13,
+      "exactos": 13,
+      "exactitud": 1.0
+    },
+    "credito": {
+      "n": 9,
+      "exactos": 9,
+      "exactitud": 1.0
+    },
+    "fuera_catalogo": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "fuera_de_alcance": {
+      "n": 10,
+      "exactos": 10,
+      "exactitud": 1.0
+    },
+    "habitual": {
+      "n": 16,
+      "exactos": 16,
+      "exactitud": 1.0
+    },
+    "inyeccion": {
+      "n": 12,
+      "exactos": 12,
+      "exactitud": 1.0
+    },
+    "manipulacion": {
+      "n": 2,
+      "exactos": 2,
+      "exactitud": 1.0
+    },
+    "no_existe": {
+      "n": 8,
+      "exactos": 8,
+      "exactitud": 1.0
+    },
+    "simple": {
+      "n": 25,
+      "exactos": 24,
+      "exactitud": 0.96
+    },
+    "sin_cantidad": {
+      "n": 7,
+      "exactos": 7,
+      "exactitud": 1.0
+    },
+    "unidades": {
+      "n": 16,
+      "exactos": 16,
+      "exactitud": 1.0
+    },
+    "varios_mensajes": {
+      "n": 11,
+      "exactos": 11,
+      "exactitud": 1.0
+    }
+  },
+  "por_origen": {
+    "casos_control.jsonl": {
+      "n": 14,
+      "exactos": 14,
+      "exactitud": 1.0
+    },
+    "casos_propios.jsonl": {
+      "n": 55,
+      "exactos": 54,
+      "exactitud": 0.9818
+    },
+    "casos_variantes.jsonl": {
+      "n": 24,
+      "exactos": 24,
+      "exactitud": 1.0
+    },
+    "mensajes_dev.jsonl": {
+      "n": 84,
+      "exactos": 84,
+      "exactitud": 1.0
+    }
+  },
+  "por_calificador": {
+    "caso_exacto": {
+      "n": 177,
+      "aprobados": 176,
+      "tasa": 0.9944
+    },
+    "estado": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "lineas": {
+      "n": 177,
+      "aprobados": 176,
+      "tasa": 0.9944
+    },
+    "total": {
+      "n": 177,
+      "aprobados": 176,
+      "tasa": 0.9944
+    },
+    "fecha_entrega": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "motivos_revision": {
+      "n": 177,
+      "aprobados": 176,
+      "tasa": 0.9944
+    },
+    "pendientes": {
+      "n": 177,
+      "aprobados": 176,
+      "tasa": 0.9944
+    },
+    "sustituciones": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "lineas_estricto": {
+      "n": 177,
+      "aprobados": 170,
+      "tasa": 0.9605
+    },
+    "integridad_precios": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "mensaje_cliente": {
+      "n": 177,
+      "aprobados": 177,
+      "tasa": 1.0
+    },
+    "latencia": {
+      "n": 177,
+      "aprobados": 170,
+      "tasa": 0.9605
+    }
+  },
+  "latencia_s": {
+    "n": 177,
+    "p50": 2.637,
+    "p95": 4.738,
+    "max": 14.676,
+    "media": 2.75
+  },
+  "latencia_llm_s": {
+    "n": 177,
+    "p50": 2.636,
+    "p95": 4.736,
+    "max": 14.674,
+    "media": 2.746
+  },
+  "tokens": {
+    "entrada": 942948,
+    "salida": 25971,
+    "cache": 0
+  },
+  "costo_usd": {
+    "total": 0.088899,
+    "por_caso": 0.000505,
+    "casos_con_costo": 176
+  },
+  "duracion_s": 122.7,
+  "fallos": [
+    "P029"
+  ],
+  "concurrencia": 4,
+  "umbral_latencia_s": 5.0,
+  "marca": "f10_mistral_r1",
+  "archivos": [
+    "ejemplos/mensajes_dev.jsonl",
+    "eval/casos_variantes.jsonl",
+    "eval/casos_control.jsonl",
+    "eval/casos_propios.jsonl"
+  ],
+  "modelo": "mistralai/mistral-small-3.2-24b-instruct",
+  "resolucion_post_llm": true
+}
